@@ -3,6 +3,7 @@ name = "sleep-edf-neuroscience"
 version = "0.1.0"
 requires-python = ">=3.14"
 dependencies = [
+    "marimo>=0.25.2",
     "numpy>=2.5.4",
     "polars>=2.1.0",
     "seaborn>=0.13.2",
