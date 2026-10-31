@@ -1,6 +1,11 @@
 desc/
-artefacts/
-data/
-submissions/
-docs/
+artefacts/*
+!artefacts/.gitkeep
+data/*
+!data/.gitkeep
+submissions/*
+!submissions/.gitkeep
+docs/*
+!docs/.gitkeep
+
 uv.lock
