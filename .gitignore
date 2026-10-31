@@ -1,11 +1,34 @@
-desc/
-artefacts/*
-!artefacts/.gitkeep
+# Python and local environments
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+build/
+dist/
+.env
+.env.*
+!.env.example
+
+# Input data and local results
 data/*
 !data/.gitkeep
+artefacts/*
+!artefacts/.gitkeep
 submissions/*
 !submissions/.gitkeep
+mlruns/
+mlartifacts/
+mlflow.db
+*.log
+
+# Private working notes, reference snapshots and local checks
 docs/*
 !docs/.gitkeep
-
-uv.lock
+desc/
+tests/*
+!tests/.gitkeep
