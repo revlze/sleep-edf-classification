@@ -1,1 +1,363 @@
-"""Спектральные, статистические и контекстные признаки EEG/EOG."""
+"""106 признаков по семействам Van Der Donckt, без фильтрации и EMG.
+
+Это адаптация, а не побитовая репликация tsfresh/YASA. FFT moments используют
+индексы rFFT и математически центральные моменты (Pearson kurtosis). Fourier
+entropy сохраняет отдельный Welch-256 рецепт tsfresh. Bandpower — Welch-500,
+Hamming, median, Simpson; частотные полосы включают обе границы как в YASA.
+"""
+
+import warnings
+from pathlib import Path
+
+import antropy as ant
+import numpy as np
+import polars as pl
+from scipy.integrate import simpson
+from scipy.signal import welch
+from scipy.stats import iqr, kurtosis, skew
+
+BANDS = (
+    (0.4, 1, "sdelta"),
+    (1, 4, "fdelta"),
+    (4, 8, "theta"),
+    (8, 12, "alpha"),
+    (12, 16, "sigma"),
+    (16, 30, "beta"),
+)
+EXTRACTOR_VERSION = "linear106_v1"
+
+
+def feature_names() -> list[str]:
+    names = []
+    common = [
+        "std",
+        "iqr",
+        "skew",
+        "kurtosis",
+        "zero_crossings",
+        "hjorth_mobility",
+        "hjorth_complexity",
+        "higuchi_fd",
+        "petrosian_fd",
+        "permutation_entropy",
+    ]
+    common += [f"binned_entropy_{b}" for b in (5, 10, 30, 60)]
+    common += [f"fft_{m}" for m in ("centroid", "variance", "skew", "kurtosis")]
+    common += [f"fourier_entropy_{b}" for b in (2, 3, 5, 10, 30, 60, 100)]
+    common += ["total_power"] + [f"relative_{b[2]}" for b in BANDS]
+    for c in range(3):
+        names += [f"ch{c}__{n}" for n in common]
+        if c < 2:
+            names += [
+                f"ch{c}__{n}"
+                for n in (
+                    "sum_fdelta_theta",
+                    "ratio_alpha_theta",
+                    "ratio_delta_beta",
+                    "ratio_delta_sigma",
+                    "ratio_delta_theta",
+                )
+            ]
+    return names
+
+
+def histogram_entropy(x: np.ndarray, bins: int) -> float:
+    if not np.isfinite(x).all():
+        return np.nan
+    p = np.histogram(x, bins=bins)[0] / len(x)
+    p = p[p > 0]
+    return float(-np.sum(p * np.log(p)))
+
+
+def extract_epoch_features(x: np.ndarray, spec: dict) -> np.ndarray:
+    """Пакет (N,T,3) в µV -> (N,106); вырожденные признаки остаются NaN."""
+    if x.ndim != 3 or x.shape[2] != 3 or not np.isfinite(x).all():
+        raise ValueError("Expected finite (N,T,3) input in microvolts")
+    outputs = []
+    eps = spec["epsilon"]
+    for c in range(3):
+        a = np.ascontiguousarray(x[:, :, c], dtype=np.float64)
+        with warnings.catch_warnings(), np.errstate(all="ignore"):
+            warnings.simplefilter("ignore", RuntimeWarning)
+            mobility, complexity = ant.hjorth_params(a, axis=1)
+            values = [
+                a.std(axis=1),
+                iqr(a, axis=1),
+                skew(a, axis=1),
+                kurtosis(a, axis=1),
+                ant.num_zerocross(a, axis=1),
+                mobility,
+                complexity,
+            ]
+            values += [
+                np.array([ant.higuchi_fd(row, kmax=spec["higuchi_kmax"]) for row in a]),
+                ant.petrosian_fd(a, axis=1),
+                np.array(
+                    [
+                        ant.perm_entropy(
+                            row,
+                            order=spec["permutation_order"],
+                            delay=1,
+                            normalize=False,
+                        )
+                        for row in a
+                    ]
+                ),
+            ]
+            values += [
+                np.array([histogram_entropy(row, b) for row in a])
+                for b in (5, 10, 30, 60)
+            ]
+            fft = np.abs(np.fft.rfft(a, axis=1))
+            bins = np.arange(fft.shape[1])
+            total = fft.sum(axis=1)
+            centroid = np.sum(fft * bins, axis=1) / total
+            centered = bins[None, :] - centroid[:, None]
+            variance = np.sum(fft * centered**2, axis=1) / total
+            third = np.sum(fft * centered**3, axis=1) / total / variance**1.5
+            fourth = np.sum(fft * centered**4, axis=1) / total / variance**2
+            third[variance < 0.5] = np.nan
+            fourth[variance < 0.5] = np.nan
+            values += [centroid, variance, third, fourth]
+            _, small = welch(
+                a, nperseg=256, noverlap=128, window="hann", average="mean", axis=1
+            )
+            small = small / small.max(axis=1, keepdims=True)
+            values += [
+                np.array([histogram_entropy(row, b) for row in small])
+                for b in (2, 3, 5, 10, 30, 60, 100)
+            ]
+            f, p = welch(
+                a,
+                fs=100,
+                nperseg=spec["welch_nperseg"],
+                noverlap=spec["welch_noverlap"],
+                window=spec["welch_window"],
+                average=spec["welch_average"],
+                detrend="constant",
+                scaling="density",
+                axis=1,
+            )
+            mask = (f >= 0.4) & (f <= 30)
+            power = simpson(p[:, mask], x=f[mask], axis=1)
+            bands = np.stack(
+                [
+                    simpson(
+                        p[:, (f >= lo) & (f <= hi)], x=f[(f >= lo) & (f <= hi)], axis=1
+                    )
+                    for lo, hi, _ in BANDS
+                ],
+                axis=1,
+            )
+            relative = bands / np.where(power > eps, power, np.nan)[:, None]
+            values += [power, *relative.T]
+            if c < 2:
+                delta = relative[:, 0] + relative[:, 1]
+
+                def ratio(num, den):
+                    return num / np.where(den > eps, den, np.nan)
+
+                values += [
+                    relative[:, 1] + relative[:, 2],
+                    ratio(relative[:, 3], relative[:, 2]),
+                    ratio(delta, relative[:, 5]),
+                    ratio(delta, relative[:, 4]),
+                    ratio(delta, relative[:, 2]),
+                ]
+        outputs.append(np.column_stack(values))
+    result = np.column_stack(outputs).astype(np.float32)
+    result[~np.isfinite(result)] = np.nan
+    if result.shape[1] != len(feature_names()):
+        raise RuntimeError("Feature schema mismatch")
+    return result
+
+
+def build_feature_table(
+    root: Path,
+    cache_root: Path,
+    labels: pl.DataFrame,
+    spec: dict,
+    mode: str,
+    *,
+    smoke: bool = False,
+    test: bool = False,
+) -> tuple[np.ndarray, pl.DataFrame, list[str], dict]:
+    """Извлечь по записям; кэш 30 s общий, длинные окна вычисляются по требованию."""
+    import hashlib
+    import json
+    from importlib.metadata import version
+    from time import perf_counter
+
+    from tqdm.auto import tqdm
+
+    from src.data import align_labels, load_record
+    from src.datasets import add_context, window_indices
+    from src.progress import stage
+
+    started = perf_counter()
+    root = Path(root)
+    cache_root = Path(cache_root)
+    manifest = json.loads((root / "MANIFEST.json").read_text(encoding="utf-8"))
+    if manifest["dataset_revision"] != "full_psg_v1":
+        raise ValueError("Wrong data revision")
+    files = {f["path"]: f for f in manifest["files"]}
+    if (
+        hashlib.sha256((root / "labels.csv").read_bytes()).hexdigest()
+        != files["labels.csv"]["sha256"]
+    ):
+        raise ValueError("Labels differ from manifest")
+    source_hash = hashlib.sha256(
+        Path(__file__).read_bytes()
+        + Path(__file__).with_name("datasets.py").read_bytes()
+    ).hexdigest()
+    signature = {
+        "version": EXTRACTOR_VERSION,
+        "source": source_hash,
+        "spec": spec,
+        "revision": manifest["dataset_revision"],
+        "manifest_sha256": hashlib.sha256(
+            (root / "MANIFEST.json").read_bytes()
+        ).hexdigest(),
+        "packages": {n: version(n) for n in ("numpy", "scipy", "antropy")},
+        "smoke": smoke,
+    }
+    key = hashlib.sha256(json.dumps(signature, sort_keys=True).encode()).hexdigest()[
+        :20
+    ]
+    folder = cache_root / key
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "definition.json").write_text(
+        json.dumps(signature, indent=2), encoding="utf-8"
+    )
+    if test:
+        if smoke:
+            raise ValueError("Test inference cannot use smoke sampling")
+        parts = []
+        for path in sorted((root / "epochs/test").glob("*.npz")):
+            rec = load_record(path, signals=False)
+            parts.append(
+                pl.DataFrame(
+                    {
+                        "id": rec["ids"],
+                        "label": pl.Series([None] * len(rec["ids"]), dtype=pl.Int64),
+                        "split": "test",
+                        "record_id": path.stem,
+                        "epoch_index": rec["epoch_index"],
+                        "subject_id": pl.Series(
+                            [None] * len(rec["ids"]), dtype=pl.String
+                        ),
+                    }
+                )
+            )
+        if not parts:
+            raise ValueError("No test recordings")
+        labels = pl.concat(parts)
+    chosen_labels = labels
+    if smoke:
+        train = sorted(set(labels.filter(pl.col("split") == "train")["subject_id"]))[:9]
+        val = sorted(set(labels.filter(pl.col("split") == "val")["subject_id"]))[:2]
+        chosen_labels = labels.filter(pl.col("subject_id").is_in(train + val))
+    matrices = []
+    metadata = []
+    hits = 0
+    records = (
+        chosen_labels.select("split", "record_id").unique().sort("split", "record_id")
+    )
+    for split, record_id in tqdm(
+        records.iter_rows(), total=records.height, desc="Признаки: записи", unit="зап."
+    ):
+        tqdm.write(f"[{split}/{record_id}] чтение метаданных", end="\n")
+        path = root / "epochs" / split / f"{record_id}.npz"
+        entry = files[f"epochs/{split}/{record_id}.npz"]
+        if path.stat().st_size != entry["bytes"]:
+            raise ValueError(f"Manifest size mismatch: {path}")
+        rec = load_record(path, signals=False)
+        y = None if test else align_labels(rec, labels, record_id, split)
+        selected = np.arange(len(rec["ids"]))
+        if smoke:
+            centers = [
+                int(np.flatnonzero(y == stage)[len(np.flatnonzero(y == stage)) // 2])
+                for stage in range(5)
+                if np.any(y == stage)
+            ]
+            selected = np.unique(
+                np.concatenate(
+                    [np.arange(max(0, i - 5), min(len(y), i + 6)) for i in centers]
+                )
+            )
+        stat = path.stat()
+        stamp = hashlib.sha256(
+            f"{entry['sha256']}:{stat.st_mtime_ns}:{stat.st_size}".encode()
+        ).hexdigest()[:16]
+
+        def obtain(long=False):
+            nonlocal hits
+            target = folder / f"{record_id}_{stamp}_{'long' if long else 'epoch'}.npz"
+            if target.exists():
+                tqdm.write(f"[{record_id}] {'60/90 s' if long else '30 s'}: кэш")
+                with np.load(target, allow_pickle=False) as z:
+                    if not np.array_equal(z["ids"], rec["ids"][selected]):
+                        raise ValueError("Cache IDs mismatch")
+                    hits += 1
+                    return {k: z[k] for k in z.files if k != "ids"}
+            # Validate actual NPZ once for each new cache object; no change to original data.
+            with stage(f"{record_id}: SHA-256"), path.open("rb") as stream:
+                digest = hashlib.file_digest(stream, "sha256").hexdigest()
+            if digest != entry["sha256"]:
+                raise ValueError(f"Manifest SHA-256 mismatch: {path}")
+            with stage(f"{record_id}: загрузка сигналов"):
+                full = load_record(path)
+            values = {}
+            windows = (
+                {"left60": (1, 0), "right60": (0, 1), "center90": (1, 1)}
+                if long
+                else {"base": (0, 0)}
+            )
+            for name, (left, right) in windows.items():
+                rows, valid = window_indices(rec["epoch_index"], left, right)
+                valid_rows = selected[valid[selected]]
+                out = np.full((len(selected), 106), np.nan, dtype=np.float32)
+                for start in tqdm(
+                    range(0, len(valid_rows), spec["batch_size"]),
+                    desc=f"{record_id}: {name}",
+                    unit="пакет",
+                    leave=False,
+                ):
+                    targets = valid_rows[start : start + spec["batch_size"]]
+                    batch = np.concatenate(
+                        [full["x"][rows[targets, j]] for j in range(rows.shape[1])],
+                        axis=1,
+                    )
+                    positions = np.searchsorted(selected, targets)
+                    out[positions] = extract_epoch_features(batch, spec)
+                values[name] = out
+            temp = target.with_suffix(".tmp.npz")
+            with stage(f"{record_id}: сохранение кэша"):
+                np.savez_compressed(temp, ids=rec["ids"][selected], **values)
+            temp.replace(target)
+            return values
+
+        base = obtain()["base"]
+        long_values = obtain(True) if mode == "multires" else None
+        # Neighbor availability is evaluated on the retained grid (also in smoke runs).
+        matrix, columns = add_context(
+            base, rec["epoch_index"][selected], feature_names(), mode, long_values
+        )
+        matrices.append(matrix)
+        order = pl.DataFrame({"id": rec["ids"][selected]})
+        metadata.append(
+            order.join(
+                labels, on="id", how="left", validate="1:1", maintain_order="left"
+            )
+        )
+    return (
+        np.concatenate(matrices),
+        pl.concat(metadata),
+        columns,
+        {
+            "key": key,
+            "cache_hits": hits,
+            "seconds": perf_counter() - started,
+            "definition": signature,
+        },
+    )
