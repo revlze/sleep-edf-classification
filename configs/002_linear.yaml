@@ -1,0 +1,48 @@
+# Single epoch: identical features and transform, inverse-square-root class weights.
+
+experiment_id: 002_linear
+seed: 42
+data_revision: full_psg_v1
+paths:
+  data_root: data/raw
+  output_root: artefacts
+features:
+  context: none
+  extractor:
+    epsilon: 1.0e-12
+    welch_nperseg: 500
+    welch_noverlap: 250
+    welch_window: hamming
+    welch_average: median
+    higuchi_kmax: 10
+    permutation_order: 3
+    batch_size: 32
+preprocessing:
+  transform: quantile
+  epsilon: 1.0e-12
+  n_quantiles: 100
+  quantile_subsample: 100000
+  robust_quantiles:
+  - 25
+  - 75
+model:
+  type: logistic_regression
+  solver: lbfgs
+  l1_ratio: 0.0
+  C: 1.0
+  class_weight: sqrt
+  max_iter: 1000
+  tol: 0.0001
+cv:
+  n_splits: 3
+  strategy: StratifiedGroupKFold
+search:
+  C:
+  - 1.0
+  - 0.1
+  - 10.0
+  - 0.01
+  - 100.0
+  refine_boundary: true
+training:
+  threads: 4

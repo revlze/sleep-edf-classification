@@ -32,3 +32,6 @@ docs/*
 desc/
 tests/*
 !tests/.gitkeep
+.linear.lock
+experiments.csv.lock
+experiments.csv.tmp
