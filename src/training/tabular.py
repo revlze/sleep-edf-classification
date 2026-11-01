@@ -12,12 +12,11 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.pipeline import Pipeline
 from threadpoolctl import threadpool_limits
-from tqdm.auto import tqdm
 
 from src.evaluation import classification_metrics, subject_metrics
 from src.models.linear import make_model
 from src.preprocessing import make_preprocessor
-from src.progress import stage
+from src.progress import Progress
 
 
 def save_json(path: Path, value: dict) -> None:
@@ -93,12 +92,12 @@ def fit_pipeline(
     return pipeline, converged
 
 
-def evaluate_trial(x, y, subjects, names, folds, c, config, folder):
+def evaluate_trial(x, y, subjects, names, folds, c, config, folder, progress):
     token = format(c, ".12g").replace(".", "p").replace("-", "m")
     metric_file = folder / f"C_{token}.json"
     prob_file = folder / f"C_{token}.npz"
     if metric_file.exists() and prob_file.exists():
-        tqdm.write(f"C={c:g}: готовый trial из кэша")
+        progress.update(len(set(folds)), detail=f"C={c:g}: готовый trial")
         result = json.loads(metric_file.read_text(encoding="utf-8"))
         with np.load(prob_file, allow_pickle=False) as z:
             prob = z["probabilities"]
@@ -107,23 +106,17 @@ def evaluate_trial(x, y, subjects, names, folds, c, config, folder):
     started = time.perf_counter()
     prob = np.full((len(y), 5), np.nan, dtype=np.float32)
     fold_metrics = []
-    for fold in tqdm(
-        sorted(set(folds)), desc=f"C={c:g}: folds", unit="fold", leave=False
-    ):
+    for fold in sorted(set(folds)):
         train = folds != fold
         valid = ~train
-        with stage(f"C={c:g}, fold={fold + 1}: preprocessing + fit"):
-            model, converged = fit_pipeline(x[train], y[train], names, c, config)
-        with (
-            stage(f"C={c:g}, fold={fold + 1}: predict"),
-            threadpool_limits(limits=config["training"]["threads"]),
-        ):
+        progress.update(detail=f"C={c:g}, fold={fold + 1}: preprocessing + fit")
+        model, converged = fit_pipeline(x[train], y[train], names, c, config)
+        progress.update(detail=f"C={c:g}, fold={fold + 1}: predict")
+        with threadpool_limits(limits=config["training"]["threads"]):
             prob[valid] = model.predict_proba(x[valid])
         metrics = classification_metrics(y[valid], prob[valid])
         fold_metrics.append({"fold": int(fold), "converged": converged, **metrics})
-        tqdm.write(
-            f"C={c:g} fold={fold} macro-F1={metrics['macro_f1']:.4f} converged={converged}",
-        )
+        progress.update(1, detail=f"C={c:g}, fold={fold + 1}: завершён")
     result = {
         "C": c,
         "oof": classification_metrics(y, prob),
@@ -159,112 +152,114 @@ def run_linear(
     trial_folder.mkdir(exist_ok=True)
     fixed = float(config["model"]["C"])
     candidates = list(dict.fromkeys([fixed, *map(float, config["search"]["C"])]))
-    results = []
-    probabilities = {}
-    for c in tqdm(candidates, desc="Поиск C (без возможного уточнения)", unit="trial"):
-        result, prob = evaluate_trial(
-            tx, y, subjects, names, folds, c, config, trial_folder
-        )
-        results.append(result)
-        probabilities[c] = prob
-    eligible = [r for r in results if r["converged"]]
-    if not eligible:
-        raise RuntimeError(
-            "No converged trials; increase max_iter and rerun with explicit settings"
-        )
+    with Progress(
+        "Обучение: CV и refit", len(candidates) * len(set(folds)) + 2, "этап"
+    ) as progress:
+        results = []
+        probabilities = {}
+        for c in candidates:
+            result, prob = evaluate_trial(
+                tx, y, subjects, names, folds, c, config, trial_folder, progress
+            )
+            results.append(result)
+            probabilities[c] = prob
+        eligible = [r for r in results if r["converged"]]
+        if not eligible:
+            raise RuntimeError(
+                "No converged trials; increase max_iter and rerun with explicit settings"
+            )
 
-    def rank(r):
-        return (-r["oof"]["macro_f1"], r["fold_f1_std"], r["C"])
+        def rank(r):
+            return (-r["oof"]["macro_f1"], r["fold_f1_std"], r["C"])
 
-    best = min(eligible, key=rank)
-    # Exactly one optional decade extension; no unbounded search.
-    if config["search"]["refine_boundary"] and best["C"] in (
-        min(candidates),
-        max(candidates),
-    ):
-        c = best["C"] / 10 if best["C"] == min(candidates) else best["C"] * 10
-        tqdm.write(f"Уточнение границы: один дополнительный trial C={c:g}")
-        result, prob = evaluate_trial(
-            tx, y, subjects, names, folds, c, config, trial_folder
-        )
-        results.append(result)
-        probabilities[c] = prob
-        if result["converged"]:
-            best = min([best, result], key=rank)
-    baseline = next(r for r in results if r["C"] == fixed)
-    if not baseline["converged"]:
-        raise RuntimeError("Fixed baseline did not converge; comparison is incomplete")
-    pl.DataFrame(
-        [
-            {
-                "C": r["C"],
-                "oof_macro_f1": r["oof"]["macro_f1"],
-                "fold_f1_std": r["fold_f1_std"],
-                "log_loss": r["oof"]["log_loss"],
-                "converged": r["converged"],
-                "seconds": r["seconds"],
-            }
-            for r in results
-        ]
-    ).write_csv(folder / "search.csv")
-    validation = {}
-    refit_seconds = 0.0
-    inference_seconds = 0.0
-    fitted = {}
-    for regime, c in tqdm(
-        [("fixed", fixed), ("tuned", best["C"])], desc="Refit и val", unit="модель"
-    ):
-        start = time.perf_counter()
-        if c not in fitted:
-            with stage(f"{regime}, C={c:g}: fit на всём train"):
-                fitted[c], converged = fit_pipeline(tx, y, names, c, config)
-            if not converged:
-                raise RuntimeError(f"Full train refit did not converge: C={c}")
-            refit_seconds += time.perf_counter() - start
-        pipeline = fitted[c]
-        start = time.perf_counter()
-        with (
-            stage(f"{regime}: predict val"),
-            threadpool_limits(limits=config["training"]["threads"]),
+        best = min(eligible, key=rank)
+        # Exactly one optional decade extension; no unbounded search.
+        if config["search"]["refine_boundary"] and best["C"] in (
+            min(candidates),
+            max(candidates),
         ):
-            vp = pipeline.predict_proba(x[val]).astype(np.float32)
-        inference_seconds += time.perf_counter() - start
-        validation[regime] = {
-            "C": c,
-            **classification_metrics(metadata["label"].to_numpy()[val], vp),
-            "subjects": subject_metrics(
-                metadata["label"].to_numpy()[val],
-                vp,
-                metadata["subject_id"].to_numpy()[val],
-            ),
-        }
-        tqdm.write(f"{regime}: сохранение модели и вероятностей")
-        joblib.dump(
-            {
-                "pipeline": pipeline,
-                "feature_names": names,
-                "features": config["features"],
-                "experiment_id": config["experiment_id"],
-                "regime": regime,
+            c = best["C"] / 10 if best["C"] == min(candidates) else best["C"] * 10
+            progress.add_total(len(set(folds)))
+            result, prob = evaluate_trial(
+                tx, y, subjects, names, folds, c, config, trial_folder, progress
+            )
+            results.append(result)
+            probabilities[c] = prob
+            if result["converged"]:
+                best = min([best, result], key=rank)
+        baseline = next(r for r in results if r["C"] == fixed)
+        if not baseline["converged"]:
+            raise RuntimeError(
+                "Fixed baseline did not converge; comparison is incomplete"
+            )
+        pl.DataFrame(
+            [
+                {
+                    "C": r["C"],
+                    "oof_macro_f1": r["oof"]["macro_f1"],
+                    "fold_f1_std": r["fold_f1_std"],
+                    "log_loss": r["oof"]["log_loss"],
+                    "converged": r["converged"],
+                    "seconds": r["seconds"],
+                }
+                for r in results
+            ]
+        ).write_csv(folder / "search.csv")
+        validation = {}
+        refit_seconds = 0.0
+        inference_seconds = 0.0
+        fitted = {}
+        for regime, c in [("fixed", fixed), ("tuned", best["C"])]:
+            start = time.perf_counter()
+            if c not in fitted:
+                progress.update(detail=f"{regime}, C={c:g}: fit на всём train")
+                fitted[c], converged = fit_pipeline(tx, y, names, c, config)
+                if not converged:
+                    raise RuntimeError(f"Full train refit did not converge: C={c}")
+                refit_seconds += time.perf_counter() - start
+            pipeline = fitted[c]
+            start = time.perf_counter()
+            progress.update(detail=f"{regime}: predict val")
+            with threadpool_limits(limits=config["training"]["threads"]):
+                vp = pipeline.predict_proba(x[val]).astype(np.float32)
+            inference_seconds += time.perf_counter() - start
+            validation[regime] = {
                 "C": c,
-            },
-            folder / f"{regime}.joblib",
-        )
-        np.savez_compressed(
-            folder / f"{regime}_predictions.npz",
-            train_ids=metadata["id"].to_numpy()[train].astype(str),
-            oof=probabilities[c],
-            val_ids=metadata["id"].to_numpy()[val].astype(str),
-            val_probabilities=vp,
-        )
-    metrics = {
-        "fixed": baseline,
-        "tuned": best,
-        "val": validation,
-        "refit_seconds": refit_seconds,
-        "inference_seconds": inference_seconds,
-        "search_seconds": sum(r["seconds"] for r in results),
-        "selection_note": "OOF used for selection; not an unbiased estimate after search",
-    }
-    save_json(folder / "metrics.json", metrics)
-    return metrics
+                **classification_metrics(metadata["label"].to_numpy()[val], vp),
+                "subjects": subject_metrics(
+                    metadata["label"].to_numpy()[val],
+                    vp,
+                    metadata["subject_id"].to_numpy()[val],
+                ),
+            }
+            progress.update(detail=f"{regime}: сохранение модели и вероятностей")
+            joblib.dump(
+                {
+                    "pipeline": pipeline,
+                    "feature_names": names,
+                    "features": config["features"],
+                    "experiment_id": config["experiment_id"],
+                    "regime": regime,
+                    "C": c,
+                },
+                folder / f"{regime}.joblib",
+            )
+            np.savez_compressed(
+                folder / f"{regime}_predictions.npz",
+                train_ids=metadata["id"].to_numpy()[train].astype(str),
+                oof=probabilities[c],
+                val_ids=metadata["id"].to_numpy()[val].astype(str),
+                val_probabilities=vp,
+            )
+            progress.update(1)
+        metrics = {
+            "fixed": baseline,
+            "tuned": best,
+            "val": validation,
+            "refit_seconds": refit_seconds,
+            "inference_seconds": inference_seconds,
+            "search_seconds": sum(r["seconds"] for r in results),
+            "selection_note": "OOF used for selection; not an unbiased estimate after search",
+        }
+        save_json(folder / "metrics.json", metrics)
+        return metrics

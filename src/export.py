@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from tqdm.auto import tqdm
+from src.progress import Progress
 
 
 def export_results(output_root: Path, archive: Path) -> Path:
@@ -27,8 +27,10 @@ def export_results(output_root: Path, archive: Path) -> Path:
         with ZipFile(
             temporary, "w", compression=ZIP_DEFLATED, compresslevel=1
         ) as bundle:
-            for path in tqdm(files, desc="Архив результатов", unit="файл"):
-                bundle.write(path, Path(root.name) / path.relative_to(root))
+            with Progress("Архив результатов", len(files), "файл") as progress:
+                for path in files:
+                    bundle.write(path, Path(root.name) / path.relative_to(root))
+                    progress.update(1)
         temporary.rename(target)
     except BaseException:
         temporary.unlink(missing_ok=True)

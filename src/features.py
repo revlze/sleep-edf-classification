@@ -172,6 +172,54 @@ def extract_epoch_features(x: np.ndarray, spec: dict) -> np.ndarray:
     return result
 
 
+def extract_record_windows(
+    x: np.ndarray,
+    indices: np.ndarray,
+    selected: np.ndarray,
+    spec: dict,
+    *,
+    long: bool,
+    progress=None,
+    record_id: str = "",
+) -> dict[str, np.ndarray]:
+    """Каждое уникальное 60 s окно вычисляется один раз для left60/right60."""
+    from src.datasets import window_indices
+
+    plan = (
+        {"left60": (1, 0), "right60": (0, 1), "center90": (1, 1)}
+        if long
+        else {"base": (0, 0)}
+    )
+    values = {
+        name: np.full((len(selected), 106), np.nan, dtype=np.float32) for name in plan
+    }
+    for width in sorted({left + right + 1 for left, right in plan.values()}):
+        mappings = {}
+        for name, (left, right) in plan.items():
+            if left + right + 1 != width:
+                continue
+            rows, valid = window_indices(indices, left, right)
+            positions = np.flatnonzero(valid[selected])
+            mappings[name] = (positions, rows[selected[positions], 0])
+        starts = np.unique(
+            np.concatenate([row_starts for _, row_starts in mappings.values()])
+        )
+        features = np.empty((len(starts), 106), dtype=np.float32)
+        for begin in range(0, len(starts), spec["batch_size"]):
+            end = min(begin + spec["batch_size"], len(starts))
+            if progress is not None:
+                progress.update(
+                    detail=f"{record_id}: окно {width * 30} s, {begin}/{len(starts)}"
+                )
+            batch = np.concatenate(
+                [x[starts[begin:end] + j] for j in range(width)], axis=1
+            )
+            features[begin:end] = extract_epoch_features(batch, spec)
+        for name, (positions, row_starts) in mappings.items():
+            values[name][positions] = features[np.searchsorted(starts, row_starts)]
+    return values
+
+
 def build_feature_table(
     root: Path,
     cache_root: Path,
@@ -188,11 +236,9 @@ def build_feature_table(
     from importlib.metadata import version
     from time import perf_counter
 
-    from tqdm.auto import tqdm
-
     from src.data import align_labels, load_record
-    from src.datasets import add_context, window_indices
-    from src.progress import stage
+    from src.datasets import add_context
+    from src.progress import Progress
 
     started = perf_counter()
     root = Path(root)
@@ -263,93 +309,88 @@ def build_feature_table(
     records = (
         chosen_labels.select("split", "record_id").unique().sort("split", "record_id")
     )
-    for split, record_id in tqdm(
-        records.iter_rows(), total=records.height, desc="Признаки: записи", unit="зап."
-    ):
-        tqdm.write(f"[{split}/{record_id}] чтение метаданных", end="\n")
-        path = root / "epochs" / split / f"{record_id}.npz"
-        entry = files[f"epochs/{split}/{record_id}.npz"]
-        if path.stat().st_size != entry["bytes"]:
-            raise ValueError(f"Manifest size mismatch: {path}")
-        rec = load_record(path, signals=False)
-        y = None if test else align_labels(rec, labels, record_id, split)
-        selected = np.arange(len(rec["ids"]))
-        if smoke:
-            centers = [
-                int(np.flatnonzero(y == stage)[len(np.flatnonzero(y == stage)) // 2])
-                for stage in range(5)
-                if np.any(y == stage)
-            ]
-            selected = np.unique(
-                np.concatenate(
-                    [np.arange(max(0, i - 5), min(len(y), i + 6)) for i in centers]
+    with Progress("Признаки: все записи", records.height, "зап.") as progress:
+        for split, record_id in records.iter_rows():
+            progress.update(detail=f"{split}/{record_id}: метаданные")
+            path = root / "epochs" / split / f"{record_id}.npz"
+            entry = files[f"epochs/{split}/{record_id}.npz"]
+            if path.stat().st_size != entry["bytes"]:
+                raise ValueError(f"Manifest size mismatch: {path}")
+            rec = load_record(path, signals=False)
+            y = None if test else align_labels(rec, labels, record_id, split)
+            selected = np.arange(len(rec["ids"]))
+            if smoke:
+                centers = [
+                    int(
+                        np.flatnonzero(y == stage)[len(np.flatnonzero(y == stage)) // 2]
+                    )
+                    for stage in range(5)
+                    if np.any(y == stage)
+                ]
+                selected = np.unique(
+                    np.concatenate(
+                        [np.arange(max(0, i - 5), min(len(y), i + 6)) for i in centers]
+                    )
+                )
+            stat = path.stat()
+            stamp = hashlib.sha256(
+                f"{entry['sha256']}:{stat.st_mtime_ns}:{stat.st_size}".encode()
+            ).hexdigest()[:16]
+
+            signals = None
+            verified = False
+
+            def obtain(long=False):
+                nonlocal hits, signals, verified
+                target = (
+                    folder / f"{record_id}_{stamp}_{'long' if long else 'epoch'}.npz"
+                )
+                if target.exists():
+                    progress.update(detail=f"{record_id}: чтение кэша")
+                    with np.load(target, allow_pickle=False) as z:
+                        if not np.array_equal(z["ids"], rec["ids"][selected]):
+                            raise ValueError("Cache IDs mismatch")
+                        hits += 1
+                        return {k: z[k] for k in z.files if k != "ids"}
+                if not verified:
+                    progress.update(detail=f"{record_id}: SHA-256")
+                    with path.open("rb") as stream:
+                        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+                    if digest != entry["sha256"]:
+                        raise ValueError(f"Manifest SHA-256 mismatch: {path}")
+                    verified = True
+                if signals is None:
+                    progress.update(detail=f"{record_id}: загрузка сигналов")
+                    signals = load_record(path)["x"]
+                values = extract_record_windows(
+                    signals,
+                    rec["epoch_index"],
+                    selected,
+                    spec,
+                    long=long,
+                    progress=progress,
+                    record_id=record_id,
+                )
+                temp = target.with_suffix(".tmp.npz")
+                progress.update(detail=f"{record_id}: сохранение кэша")
+                np.savez_compressed(temp, ids=rec["ids"][selected], **values)
+                temp.replace(target)
+                return values
+
+            base = obtain()["base"]
+            long_values = obtain(True) if mode == "multires" else None
+            # Neighbor availability is evaluated on the retained grid (also in smoke runs).
+            matrix, columns = add_context(
+                base, rec["epoch_index"][selected], feature_names(), mode, long_values
+            )
+            matrices.append(matrix)
+            order = pl.DataFrame({"id": rec["ids"][selected]})
+            metadata.append(
+                order.join(
+                    labels, on="id", how="left", validate="1:1", maintain_order="left"
                 )
             )
-        stat = path.stat()
-        stamp = hashlib.sha256(
-            f"{entry['sha256']}:{stat.st_mtime_ns}:{stat.st_size}".encode()
-        ).hexdigest()[:16]
-
-        def obtain(long=False):
-            nonlocal hits
-            target = folder / f"{record_id}_{stamp}_{'long' if long else 'epoch'}.npz"
-            if target.exists():
-                tqdm.write(f"[{record_id}] {'60/90 s' if long else '30 s'}: кэш")
-                with np.load(target, allow_pickle=False) as z:
-                    if not np.array_equal(z["ids"], rec["ids"][selected]):
-                        raise ValueError("Cache IDs mismatch")
-                    hits += 1
-                    return {k: z[k] for k in z.files if k != "ids"}
-            # Validate actual NPZ once for each new cache object; no change to original data.
-            with stage(f"{record_id}: SHA-256"), path.open("rb") as stream:
-                digest = hashlib.file_digest(stream, "sha256").hexdigest()
-            if digest != entry["sha256"]:
-                raise ValueError(f"Manifest SHA-256 mismatch: {path}")
-            with stage(f"{record_id}: загрузка сигналов"):
-                full = load_record(path)
-            values = {}
-            windows = (
-                {"left60": (1, 0), "right60": (0, 1), "center90": (1, 1)}
-                if long
-                else {"base": (0, 0)}
-            )
-            for name, (left, right) in windows.items():
-                rows, valid = window_indices(rec["epoch_index"], left, right)
-                valid_rows = selected[valid[selected]]
-                out = np.full((len(selected), 106), np.nan, dtype=np.float32)
-                for start in tqdm(
-                    range(0, len(valid_rows), spec["batch_size"]),
-                    desc=f"{record_id}: {name}",
-                    unit="пакет",
-                    leave=False,
-                ):
-                    targets = valid_rows[start : start + spec["batch_size"]]
-                    batch = np.concatenate(
-                        [full["x"][rows[targets, j]] for j in range(rows.shape[1])],
-                        axis=1,
-                    )
-                    positions = np.searchsorted(selected, targets)
-                    out[positions] = extract_epoch_features(batch, spec)
-                values[name] = out
-            temp = target.with_suffix(".tmp.npz")
-            with stage(f"{record_id}: сохранение кэша"):
-                np.savez_compressed(temp, ids=rec["ids"][selected], **values)
-            temp.replace(target)
-            return values
-
-        base = obtain()["base"]
-        long_values = obtain(True) if mode == "multires" else None
-        # Neighbor availability is evaluated on the retained grid (also in smoke runs).
-        matrix, columns = add_context(
-            base, rec["epoch_index"][selected], feature_names(), mode, long_values
-        )
-        matrices.append(matrix)
-        order = pl.DataFrame({"id": rec["ids"][selected]})
-        metadata.append(
-            order.join(
-                labels, on="id", how="left", validate="1:1", maintain_order="left"
-            )
-        )
+            progress.update(1)
     return (
         np.concatenate(matrices),
         pl.concat(metadata),
