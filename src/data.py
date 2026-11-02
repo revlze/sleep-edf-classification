@@ -1,5 +1,6 @@
 """Загрузка поставки Sleep-EDF без предположений о порядке строк меток."""
 
+import hashlib
 from pathlib import Path
 
 import numpy as np
@@ -7,6 +8,22 @@ import polars as pl
 
 CHANNELS = ("EEG Fpz-Cz", "EEG Pz-Oz", "EOG horizontal")
 STAGES = ("W", "N1", "N2", "N3", "REM")
+
+
+def data_fingerprint(root: Path) -> str:
+    """Метки и размеры/mtime NPZ для повторного запуска, без исходного manifest.
+
+    Это идентификатор локального состояния данных, не проверка их подлинности.
+    Содержимое сигналов здесь не читается.
+    """
+    digest = hashlib.sha256((root / "labels.csv").read_bytes())
+    for split in ("train", "val", "test"):
+        for path in sorted((root / "epochs" / split).glob("*.npz")):
+            stat = path.stat()
+            digest.update(
+                f"{path.relative_to(root).as_posix()}:{stat.st_size}:{stat.st_mtime_ns}\n".encode()
+            )
+    return digest.hexdigest()
 
 
 def load_labels(root: Path) -> pl.DataFrame:

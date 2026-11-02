@@ -1,0 +1,11 @@
+{
+  "source": {
+    "e4170dcbcdbbacca3215c1d732035c10daeff1569095b00f39eb77aaf8ab9f3c": "34ef96559e5ad21aaee11075aee6675aa3eed7e72144b22555ce4baeffa24e5e",
+    "363f79d65c882f1778806279eb445e610ad0848d0a5dbb3d7263aabcf2042e98": "34ef96559e5ad21aaee11075aee6675aa3eed7e72144b22555ce4baeffa24e5e",
+    "db19b999306a66ccaa3aaa6bd523ee1fd3e7a03061884fc750d62354ec278646": "34ef96559e5ad21aaee11075aee6675aa3eed7e72144b22555ce4baeffa24e5e"
+  },
+  "features": {
+    "22cfc629776f893565dd648dab04ae481e010d2d563e47c259fd515cbcee3860": "70e78fdbcc01b1a4df26852906f28fb38bb4f86d3a8654b521c0abba4d9b1abe"
+  },
+  "reason": "Exact source hash pairs preserve calculations after per-resource locking and atomic publication. Numerical data, preprocessing, LR and tabular training functions are unchanged. Feature aliases preserve the verified cache-lock migration. Windows-only portalocker dependency and platform lock dispatch preserve the numerical pipeline; POSIX locking is unchanged."
+}
