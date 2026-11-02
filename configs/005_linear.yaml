@@ -45,7 +45,7 @@ search:
   - 100.0
   refine_boundary: true
 training:
-  threads: 4
+  threads: 10
 parent_candidates:
 - 001_linear
 - 002_linear

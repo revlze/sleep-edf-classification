@@ -5,9 +5,16 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from src.progress import Progress
+from src.storage import file_lock
 
 
 def export_results(output_root: Path, archive: Path) -> Path:
+    root = output_root.resolve(strict=True)
+    with file_lock(root / ".export.lock"):
+        return _export_results(root, archive)
+
+
+def _export_results(output_root: Path, archive: Path) -> Path:
     """Упаковать каталог целиком потоково, без окружения и исходных сигналов."""
     root = output_root.resolve(strict=True)
     target = archive.resolve()
@@ -17,7 +24,11 @@ def export_results(output_root: Path, archive: Path) -> Path:
         raise RuntimeError("Training lock exists; stop training before exporting")
     if target.exists():
         raise FileExistsError(target)
-    files = sorted(p for p in root.rglob("*") if p.is_file())
+    files = sorted(
+        p
+        for p in root.rglob("*")
+        if p.is_file() and not p.name.endswith(".lock") and ".tmp." not in p.name
+    )
     if any(p.is_symlink() or not p.resolve().is_relative_to(root) for p in files):
         raise ValueError("Output contains links outside the results directory")
     target.parent.mkdir(parents=True, exist_ok=True)

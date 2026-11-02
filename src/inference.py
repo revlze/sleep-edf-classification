@@ -11,8 +11,9 @@ from omegaconf import OmegaConf
 
 from src.data import load_labels
 from src.evaluation import validate_probabilities
-from src.experiment import PROJECT_ROOT, exclusive_file, source_fingerprint
+from src.experiment import PROJECT_ROOT, source_compatible, source_fingerprint
 from src.features import build_feature_table
+from src.storage import atomic_path, file_lock
 
 
 def assemble_submission(ids, probabilities, sample: pl.DataFrame) -> pl.DataFrame:
@@ -43,17 +44,24 @@ def predict_submission(
     )
     if config["runtime"]["smoke"]:
         raise ValueError("Smoke models cannot produce production submissions")
-    if source_fingerprint() != config["runtime"]["source_fingerprint"]:
+    if not source_compatible(
+        config["runtime"]["source_fingerprint"], source_fingerprint()
+    ):
         raise ValueError("Source/dependency fingerprint differs from checkpoint")
+    if not (checkpoint.parent / "metrics.json").exists():
+        raise ValueError("Experiment is not complete; use a completed checkpoint")
     bundle = joblib.load(checkpoint)
     root = Path(data_root or config["paths"]["data_root"]).resolve()
     cache = Path(config["paths"]["cache_root"])
     target = Path(
         output or PROJECT_ROOT / "submissions" / f"{config['experiment_id']}.csv"
     ).resolve()
-    if target.exists():
-        raise FileExistsError(target)
-    with exclusive_file(Path(config["paths"]["output_root"]) / ".linear.lock"):
+    with (
+        file_lock(Path(config["paths"]["output_root"]) / ".export.lock", shared=True),
+        file_lock(target.with_suffix(".csv.lock")),
+    ):
+        if target.exists():
+            raise FileExistsError(target)
         x, metadata, names, definition = build_feature_table(
             root,
             cache,
@@ -80,24 +88,25 @@ def predict_submission(
             metadata["id"].to_numpy(), probabilities, sample
         )
         target.parent.mkdir(parents=True, exist_ok=True)
-        submission.write_csv(target)
         with checkpoint.open("rb") as stream:
             digest = hashlib.file_digest(stream, "sha256").hexdigest()
-        OmegaConf.save(
-            OmegaConf.create(
-                {
-                    "experiment_id": config["experiment_id"],
-                    "regime": bundle["regime"],
-                    "C": bundle["C"],
-                    "checkpoint": str(checkpoint),
-                    "checkpoint_sha256": digest,
-                    "feature_key": definition["key"],
-                    "data_revision": config["data_revision"],
-                    "csv": str(target),
-                }
-            ),
-            target.with_suffix(".meta.yaml"),
+        metadata = OmegaConf.create(
+            {
+                "experiment_id": config["experiment_id"],
+                "regime": bundle["regime"],
+                "C": bundle["C"],
+                "checkpoint": str(checkpoint),
+                "checkpoint_sha256": digest,
+                "feature_key": definition["key"],
+                "data_revision": config["data_revision"],
+                "csv": str(target),
+            }
         )
+        # CSV публикуется последним: готовому CSV уже соответствует готовая meta.
+        with atomic_path(target) as temporary:
+            submission.write_csv(temporary)
+            with atomic_path(target.with_suffix(".meta.yaml")) as meta_temporary:
+                OmegaConf.save(metadata, meta_temporary)
     return target
 
 

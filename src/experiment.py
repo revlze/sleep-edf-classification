@@ -5,34 +5,17 @@ import hashlib
 import json
 import re
 import subprocess
-from contextlib import contextmanager
 from pathlib import Path
 
 import numpy as np
 from omegaconf import OmegaConf
 
-from src.data import load_labels
+from src.data import data_fingerprint, load_labels
 from src.features import build_feature_table
+from src.storage import canonical_fingerprint, file_lock
 from src.training.tabular import grouped_folds, run_linear, save_json
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-
-@contextmanager
-def exclusive_file(path: Path):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        stream = path.open("x", encoding="utf-8")
-    except FileExistsError as error:
-        raise RuntimeError(
-            f"Another run or stale lock: {path}. Run experiments sequentially; inspect before removing stale lock."
-        ) from error
-    try:
-        stream.write("Running\n")
-        stream.close()
-        yield
-    finally:
-        path.unlink(missing_ok=True)
 
 
 def source_fingerprint() -> str:
@@ -49,11 +32,18 @@ def source_fingerprint() -> str:
         "run.py",
         "inference.py",
         "progress.py",
+        "storage.py",
     )
     paths = [PROJECT_ROOT / "src" / name for name in modules] + [
         PROJECT_ROOT / "uv.lock"
     ]
     return hashlib.sha256(b"".join(p.read_bytes() for p in paths)).hexdigest()
+
+
+def source_compatible(saved: str, current: str) -> bool:
+    return canonical_fingerprint(saved, "source") == canonical_fingerprint(
+        current, "source"
+    )
 
 
 def read_git_state(root: Path) -> dict:
@@ -116,9 +106,9 @@ def select_parent(config: dict, namespace: Path) -> dict:
         resolved = OmegaConf.to_container(
             OmegaConf.load(folder / "resolved.yaml"), resolve=True
         )
-        if (
-            resolved["runtime"]["source_fingerprint"]
-            != config["runtime"]["source_fingerprint"]
+        if not source_compatible(
+            resolved["runtime"]["source_fingerprint"],
+            config["runtime"]["source_fingerprint"],
         ):
             raise ValueError("Parent code/environment differs; do not mix experiments")
         metrics = json.loads((folder / "metrics.json").read_text(encoding="utf-8"))
@@ -128,6 +118,8 @@ def select_parent(config: dict, namespace: Path) -> dict:
         parent["seed"] != config["seed"]
         or parent["paths"]["data_root"] != config["paths"]["data_root"]
         or parent["features"]["extractor"] != config["features"]["extractor"]
+        or parent["runtime"]["data_fingerprint"]
+        != config["runtime"]["data_fingerprint"]
     ):
         raise ValueError("Incompatible parent settings")
     config["preprocessing"] = parent["preprocessing"].copy()
@@ -142,7 +134,7 @@ def select_parent(config: dict, namespace: Path) -> dict:
 
 def update_journal(config: dict, metrics: dict, folder: Path) -> None:
     path = PROJECT_ROOT / "experiments.csv"
-    with exclusive_file(path.with_suffix(".csv.lock")):
+    with file_lock(path.with_suffix(".csv.lock"), wait=True):
         with path.open(encoding="utf-8", newline="") as stream:
             reader = csv.DictReader(stream)
             fields = list(reader.fieldnames)
@@ -200,7 +192,20 @@ def run_experiment(
     out = Path(config["paths"]["output_root"])
     out.mkdir(parents=True, exist_ok=True)
     namespace = out / "smoke" if smoke else out
-    with exclusive_file(out / ".linear.lock"):
+    if (out / ".linear.lock").exists():
+        raise RuntimeError(
+            "An older training process is active; wait before starting another training run. Inference from completed models is available."
+        )
+    folder = namespace / config["experiment_id"]
+    with (
+        file_lock(out / ".export.lock", shared=True),
+        file_lock(folder / ".run.lock"),
+    ):
+        root = Path(config["paths"]["data_root"])
+        labels = load_labels(root)
+        label_hash = hashlib.sha256((root / "labels.csv").read_bytes()).hexdigest()
+        config["runtime"]["labels_sha256"] = label_hash
+        config["runtime"]["data_fingerprint"] = data_fingerprint(root)
         # Feature preparation is independent of parent model selection.
         if not prepare:
             config = select_parent(config, namespace)
@@ -223,15 +228,6 @@ def run_experiment(
             raise ValueError("Unresolved/invalid approach settings")
         if any(float(c) <= 0 for c in config["search"]["C"]):
             raise ValueError("C must be positive")
-        labels = load_labels(Path(config["paths"]["data_root"]))
-        label_hash = hashlib.sha256(
-            (Path(config["paths"]["data_root"]) / "labels.csv").read_bytes()
-        ).hexdigest()
-        config["runtime"]["labels_sha256"] = label_hash
-        config["runtime"]["manifest_sha256"] = hashlib.sha256(
-            (Path(config["paths"]["data_root"]) / "MANIFEST.json").read_bytes()
-        ).hexdigest()
-        folder = namespace / config["experiment_id"]
         if not prepare:
             folder.mkdir(parents=True, exist_ok=True)
             snapshot = OmegaConf.create(config)
@@ -239,6 +235,13 @@ def run_experiment(
                 old = OmegaConf.to_container(
                     OmegaConf.load(folder / "resolved.yaml"), resolve=True
                 )
+                if source_compatible(
+                    old["runtime"]["source_fingerprint"],
+                    config["runtime"]["source_fingerprint"],
+                ):
+                    old["runtime"]["source_fingerprint"] = config["runtime"][
+                        "source_fingerprint"
+                    ]
                 if old != config:
                     raise ValueError(
                         "Existing experiment has different settings; use a new ID/output root"
@@ -254,7 +257,7 @@ def run_experiment(
             else:
                 OmegaConf.save(snapshot, folder / "resolved.yaml")
         x, metadata, names, cache = build_feature_table(
-            Path(config["paths"]["data_root"]),
+            root,
             Path(config["paths"]["cache_root"]),
             labels,
             config["features"]["extractor"],
@@ -275,9 +278,10 @@ def run_experiment(
         fold_path = (
             namespace / "splits" / f"groups_{config['seed']}_{label_hash[:12]}.csv"
         )
-        folds = grouped_folds(
-            fold_metadata, fold_path, config["seed"], config["cv"]["n_splits"]
-        )
+        with file_lock(fold_path.with_suffix(".csv.lock"), wait=True):
+            folds = grouped_folds(
+                fold_metadata, fold_path, config["seed"], config["cv"]["n_splits"]
+            )
         save_json(
             folder / "provenance.json",
             {

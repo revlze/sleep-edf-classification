@@ -239,31 +239,29 @@ def build_feature_table(
     from src.data import align_labels, load_record
     from src.datasets import add_context
     from src.progress import Progress
+    from src.storage import (
+        atomic_path,
+        canonical_fingerprint,
+        file_lock,
+        load_or_create_npz,
+    )
 
     started = perf_counter()
     root = Path(root)
     cache_root = Path(cache_root)
-    manifest = json.loads((root / "MANIFEST.json").read_text(encoding="utf-8"))
-    if manifest["dataset_revision"] != "full_psg_v1":
-        raise ValueError("Wrong data revision")
-    files = {f["path"]: f for f in manifest["files"]}
-    if (
-        hashlib.sha256((root / "labels.csv").read_bytes()).hexdigest()
-        != files["labels.csv"]["sha256"]
-    ):
-        raise ValueError("Labels differ from manifest")
+    if not labels["id"].str.starts_with("full_").all():
+        raise ValueError("Expected full_psg_v1 epoch IDs with the full_ prefix")
     source_hash = hashlib.sha256(
         Path(__file__).read_bytes()
         + Path(__file__).with_name("datasets.py").read_bytes()
     ).hexdigest()
+    source_hash = canonical_fingerprint(source_hash, "features")
     signature = {
         "version": EXTRACTOR_VERSION,
         "source": source_hash,
         "spec": spec,
-        "revision": manifest["dataset_revision"],
-        "manifest_sha256": hashlib.sha256(
-            (root / "MANIFEST.json").read_bytes()
-        ).hexdigest(),
+        "revision": "full_psg_v1",
+        "labels_sha256": hashlib.sha256((root / "labels.csv").read_bytes()).hexdigest(),
         "packages": {n: version(n) for n in ("numpy", "scipy", "antropy")},
         "smoke": smoke,
     }
@@ -272,9 +270,16 @@ def build_feature_table(
     ]
     folder = cache_root / key
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / "definition.json").write_text(
-        json.dumps(signature, indent=2), encoding="utf-8"
-    )
+    definition = folder / "definition.json"
+    if not definition.exists():
+        with file_lock(folder / "definition.lock", wait=True):
+            if not definition.exists():
+                with atomic_path(definition) as temporary:
+                    temporary.write_text(
+                        json.dumps(signature, indent=2), encoding="utf-8"
+                    )
+    if json.loads(definition.read_text(encoding="utf-8")) != signature:
+        raise ValueError("Feature cache definition mismatch")
     if test:
         if smoke:
             raise ValueError("Test inference cannot use smoke sampling")
@@ -313,10 +318,9 @@ def build_feature_table(
         for split, record_id in records.iter_rows():
             progress.update(detail=f"{split}/{record_id}: метаданные")
             path = root / "epochs" / split / f"{record_id}.npz"
-            entry = files[f"epochs/{split}/{record_id}.npz"]
-            if path.stat().st_size != entry["bytes"]:
-                raise ValueError(f"Manifest size mismatch: {path}")
             rec = load_record(path, signals=False)
+            if not np.char.startswith(rec["ids"], "full_").all():
+                raise ValueError(f"Expected full_psg_v1 epoch IDs: {path}")
             y = None if test else align_labels(rec, labels, record_id, split)
             selected = np.arange(len(rec["ids"]))
             if smoke:
@@ -334,47 +338,39 @@ def build_feature_table(
                 )
             stat = path.stat()
             stamp = hashlib.sha256(
-                f"{entry['sha256']}:{stat.st_mtime_ns}:{stat.st_size}".encode()
+                f"{split}:{stat.st_mtime_ns}:{stat.st_size}".encode()
             ).hexdigest()[:16]
 
             signals = None
-            verified = False
 
             def obtain(long=False):
-                nonlocal hits, signals, verified
+                nonlocal hits, signals
                 target = (
                     folder / f"{record_id}_{stamp}_{'long' if long else 'epoch'}.npz"
                 )
-                if target.exists():
-                    progress.update(detail=f"{record_id}: чтение кэша")
-                    with np.load(target, allow_pickle=False) as z:
-                        if not np.array_equal(z["ids"], rec["ids"][selected]):
-                            raise ValueError("Cache IDs mismatch")
-                        hits += 1
-                        return {k: z[k] for k in z.files if k != "ids"}
-                if not verified:
-                    progress.update(detail=f"{record_id}: SHA-256")
-                    with path.open("rb") as stream:
-                        digest = hashlib.file_digest(stream, "sha256").hexdigest()
-                    if digest != entry["sha256"]:
-                        raise ValueError(f"Manifest SHA-256 mismatch: {path}")
-                    verified = True
-                if signals is None:
-                    progress.update(detail=f"{record_id}: загрузка сигналов")
-                    signals = load_record(path)["x"]
-                values = extract_record_windows(
-                    signals,
-                    rec["epoch_index"],
-                    selected,
-                    spec,
-                    long=long,
-                    progress=progress,
-                    record_id=record_id,
-                )
-                temp = target.with_suffix(".tmp.npz")
-                progress.update(detail=f"{record_id}: сохранение кэша")
-                np.savez_compressed(temp, ids=rec["ids"][selected], **values)
-                temp.replace(target)
+
+                def create():
+                    nonlocal signals
+                    if signals is None:
+                        progress.update(detail=f"{record_id}: загрузка сигналов")
+                        signals = load_record(path)["x"]
+                    values = extract_record_windows(
+                        signals,
+                        rec["epoch_index"],
+                        selected,
+                        spec,
+                        long=long,
+                        progress=progress,
+                        record_id=record_id,
+                    )
+                    progress.update(detail=f"{record_id}: сохранение кэша")
+                    return {"ids": rec["ids"][selected], **values}
+
+                progress.update(detail=f"{record_id}: кэш / ожидание вычисления")
+                values, hit = load_or_create_npz(target, create)
+                if not np.array_equal(values.pop("ids"), rec["ids"][selected]):
+                    raise ValueError("Cache IDs mismatch")
+                hits += int(hit)
                 return values
 
             base = obtain()["base"]

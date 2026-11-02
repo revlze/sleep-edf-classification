@@ -14,11 +14,15 @@ uv run python -m src.run configs/001_linear.yaml --smoke
 
 Для полноценного запуска уберите `--smoke`. Пути задаются через
 `--data-root` и `--output-root`; по умолчанию это `data/raw` и `artefacts`.
+Если данные лежат непосредственно в `data/`, добавьте `--data-root data`.
+Локально можно выполнить Run All в `notebooks/02_train.ipynb`: он находит данные
+в `data/raw/` или `data/`, последовательно запускает 001–006 и показывает OOF/val.
+`SMOKE=False` запускает полную серию, `True` — небольшую проверку.
 
 ## Структура
 
 - `src/` — данные, признаки, модели, обучение и оценка.
-- `configs/` — конфигурации экспериментов `001_linear`–`006_linear`.
+- `configs/` — серия `001_linear`–`006_linear`; `007_linear` повторяет 006 с большим лимитом итераций LR.
 - `notebooks/01_eda.ipynb` — исследование данных.
 - `notebooks/02_train.ipynb` — обучение; `03_eval.ipynb` — сравнение; `04_submit.ipynb` — submission.
 - `notebooks/00_kaggle.ipynb` — запуск на Kaggle и выгрузка результатов одним ZIP.
@@ -26,7 +30,13 @@ uv run python -m src.run configs/001_linear.yaml --smoke
 - `data/raw/`, `artefacts/`, `submissions/`, `docs/` — локальные файлы вне Git.
 
 Поставка `full_psg_v1`: в корне `labels.csv`, `sample_submission.csv`,
-`MANIFEST.json` и `epochs/{train,val,test}/*.npz`. Классы: W, N1, N2, N3, REM.
+`epochs/{train,val,test}/*.npz`. Классы: W, N1, N2, N3, REM.
+Для LR `MANIFEST.json` не требуется: кэш учитывает метки, параметры, размеры
+и время изменения NPZ. Проверки по исходным контрольным суммам не выполняются.
+Признаки и завершённые trials переиспользуются; прерванный fold обучается заново.
+Готовые кэши читаются параллельно; создание одного NPZ сериализуется отдельно.
+Разные эксперименты и инференс завершённой модели могут работать одновременно.
+Запись одного CSV и экспорт результатов защищены отдельными блокировками.
 
 ## Проверки
 
