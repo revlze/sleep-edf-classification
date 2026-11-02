@@ -1,6 +1,5 @@
-"""Блокировки отдельных ресурсов и атомарная публикация файлов на macOS/Linux."""
+"""Блокировки ресурсов и атомарная публикация файлов на Windows/macOS/Linux."""
 
-import fcntl
 import json
 import os
 import tempfile
@@ -10,6 +9,11 @@ from pathlib import Path
 
 import numpy as np
 
+if os.name == "nt":
+    import portalocker
+else:
+    import fcntl
+
 
 @contextmanager
 def file_lock(
@@ -17,15 +21,27 @@ def file_lock(
 ) -> Iterator[None]:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a+b") as stream:
-        operation = fcntl.LOCK_SH if shared else fcntl.LOCK_EX
-        try:
-            fcntl.flock(stream, operation | (0 if wait else fcntl.LOCK_NB))
-        except BlockingIOError as error:
-            raise RuntimeError(f"Ресурс занят другим процессом: {path}") from error
+        if os.name == "nt":
+            operation = portalocker.LOCK_SH if shared else portalocker.LOCK_EX
+            try:
+                portalocker.lock(
+                    stream, operation | (0 if wait else portalocker.LOCK_NB)
+                )
+            except portalocker.exceptions.LockException as error:
+                raise RuntimeError(f"Ресурс занят другим процессом: {path}") from error
+        else:
+            operation = fcntl.LOCK_SH if shared else fcntl.LOCK_EX
+            try:
+                fcntl.flock(stream, operation | (0 if wait else fcntl.LOCK_NB))
+            except BlockingIOError as error:
+                raise RuntimeError(f"Ресурс занят другим процессом: {path}") from error
         try:
             yield
         finally:
-            fcntl.flock(stream, fcntl.LOCK_UN)
+            if os.name == "nt":
+                portalocker.unlock(stream)
+            else:
+                fcntl.flock(stream, fcntl.LOCK_UN)
     # Не удаляем файл: иначе другой процесс может заблокировать другой inode.
 
 

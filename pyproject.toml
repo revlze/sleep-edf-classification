@@ -13,6 +13,7 @@ dependencies = [
     "omegaconf>=2.4.0",
     "pandas>=3.1.0",
     "polars>=2.1.0",
+    "portalocker[win32]>=4.3.0 ; sys_platform == 'win32'",
     "scikit-learn>=1.9.1",
     "scipy>=1.18.1",
     "seaborn>=0.13.2",
