@@ -41,6 +41,7 @@ def tree_fingerprint() -> str:
         "evaluation.py",
         "storage.py",
         "experiment.py",
+        "journal.py",
         "inference.py",
         "run.py",
         "models/linear.py",
