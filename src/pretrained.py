@@ -37,7 +37,7 @@ from src.models.pretrained_assets import (
 )
 from src.pretrained_signals import contiguous_segments, epoch_blocks, preprocess_segment
 from src.progress import Progress
-from src.storage import atomic_path, file_lock
+from src.storage import atomic_path, canonical_fingerprint, file_lock
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -71,9 +71,10 @@ def source_digest() -> str:
             "progress.py",
         )
     ] + [ROOT / "environments/pretrained/uv.lock"]
-    return hashlib.sha256(
+    digest = hashlib.sha256(
         b"".join(p.read_bytes().replace(b"\r\n", b"\n") for p in paths)
     ).hexdigest()
+    return canonical_fingerprint(digest, "pretrained")
 
 
 def hardware(device: str) -> dict:
@@ -551,7 +552,7 @@ def _run_model(
     )
     if lookup["subject_id"].null_count():
         raise ValueError("Missing subject IDs")
-    subjects = lookup["subject_id"].to_numpy()
+    subjects = np.asarray(lookup["subject_id"].to_numpy(), dtype=str)
     metrics = {
         "evaluation_protocol": "zero_shot_provided_val",
         "smoke": args.smoke,
