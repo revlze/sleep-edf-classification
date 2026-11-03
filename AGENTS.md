@@ -58,7 +58,24 @@ CatBoost закрыт, 012–014 отменены и запрещены к за�
 (U-Sleep run1, голосование двух EEG/EOG-пар), 018_pretrained (SleepFMStager,
 три BAS-канала) и 019_pretrained (равное среднее AnySleep run1/2/3).
 CLI исходных 016–019 — python -m src.pretrained.
-Следующая серия подготовлена, полноценные запуски ещё не выполнены:
+Серия 020–043 завершена на Kaggle: полный val → test, результаты импортированы,
+вероятности и submissions проверены, в experiments.csv добавлены 24 строки.
+Оригинальные ZIP — artefacts/archives/pretrained; аудит импорта —
+artefacts/imports/pretrained_series; сравнение — docs/pretrained_series_results.md.
+К 019 добавлен test, прежние val/config/metrics сохранены. 022 дал macro-F1
+0.83862 против 0.83857 у 019; существенный выигрыш не подтверждён.
+044–045 завершены на Kaggle и импортированы: OOF, refit checkpoints, val/test,
+submissions и две строки experiments.csv. Веса — artefacts/trained-checkpoints;
+аудит — artefacts/imports/pretrained_correction. При импорте исправлена только
+сериализация NumPy-ключей истории в 12 fold last.pt; все тензоры сохранены,
+исходные ZIP неизменны. Подробности — docs/correction_import_notes.md.
+046–048 завершены на Kaggle и импортированы: best checkpoints по train subject
+holdout, val/test probabilities, submissions и три строки experiments.csv.
+Веса — artefacts/trained-checkpoints/{full,smoke}/<ID>/fit; аудит —
+artefacts/imports/pretrained_finetune. В 6 last.pt нормализованы только NumPy-ключи
+истории, численное состояние сохранено; оригинальные ZIP не изменены.
+Технические подробности — docs/finetune_import_notes.md. Анализ качества не выполнялся.
+Назначение конфигураций:
 020–028 — AnySleep Early/Late Fusion и фиксированные ансамбли;
 029–036 — HF4/HF8 soft/hard и ансамбли, 034/036 запускаются отдельным этапом;
 037–040 — train-only дискриминативный Viterbi; 041–043 — TinySleepNet по двум EEG;
