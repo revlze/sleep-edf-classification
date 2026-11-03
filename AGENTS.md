@@ -54,8 +54,55 @@ CatBoost закрыт, 012–014 отменены и запрещены к за�
 Нет CV, screening, search, выбора родителя и early stopping; OOF отсутствует.
 Табличная серия закрыта. Сохраняем 005/007_linear и 011_tree как контрольные
 модели; 015_tree — завершённая проверка multi-resolution без выигрыша macro-F1.
-Дальше обсуждаем pretrained-модели; их реализация ещё не начата.
-008 оставлен нетронутым; следующие новые ID начинаются с 016.
+Для zero-shot серии завершены 016_pretrained (AnySleep run1), 017_pretrained
+(U-Sleep run1, голосование двух EEG/EOG-пар), 018_pretrained (SleepFMStager,
+три BAS-канала) и 019_pretrained (равное среднее AnySleep run1/2/3).
+CLI исходных 016–019 — python -m src.pretrained.
+Серия 020–043 завершена на Kaggle: полный val → test, результаты импортированы,
+вероятности и submissions проверены, в experiments.csv добавлены 24 строки.
+Оригинальные ZIP — artefacts/archives/pretrained; аудит импорта —
+artefacts/imports/pretrained_series; сравнение — docs/pretrained_series_results.md.
+К 019 добавлен test, прежние val/config/metrics сохранены. 022 дал macro-F1
+0.83862 против 0.83857 у 019; существенный выигрыш не подтверждён.
+044–045 завершены на Kaggle и импортированы: OOF, refit checkpoints, val/test,
+submissions и две строки experiments.csv. Веса — artefacts/trained-checkpoints;
+аудит — artefacts/imports/pretrained_correction. При импорте исправлена только
+сериализация NumPy-ключей истории в 12 fold last.pt; все тензоры сохранены,
+исходные ZIP неизменны. Подробности — docs/correction_import_notes.md.
+046–048 завершены на Kaggle и импортированы: best checkpoints по train subject
+holdout, val/test probabilities, submissions и три строки experiments.csv.
+Веса — artefacts/trained-checkpoints/{full,smoke}/<ID>/fit; аудит —
+artefacts/imports/pretrained_finetune. В 6 last.pt нормализованы только NumPy-ключи
+истории, численное состояние сохранено; оригинальные ZIP не изменены.
+Технические подробности — docs/finetune_import_notes.md. Анализ качества не выполнялся.
+Из сетки смесей 019 + 041 пользователь оставил только 053_pretrained: 50/50.
+Его конфигурация — configs/053_pretrained.yaml; submission — submissions/053_pretrained.csv
+и копия в submissions/ensemble_019_041. Остальные новые смеси 049–052 и 054–057
+архивированы: YAML перенесены в artefacts/<ID>/<ID>.yaml, численные результаты
+сохранены, в experiments.csv статус archived. Лишние CSV-копии удалены по запросу.
+Номера архивированных экспериментов не переиспользуются.
+Назначение конфигураций:
+020–028 — AnySleep Early/Late Fusion и фиксированные ансамбли;
+029–036 — HF4/HF8 soft/hard и ансамбли, 034/036 запускаются отдельным этапом;
+037–040 — train-only дискриминативный Viterbi; 041–043 — TinySleepNet по двум EEG;
+044–045 — residual CNN на вероятностях, grouped CV и full-train refit;
+046–048 — classifier/partial/full fine-tuning AnySleep run1 с train subject holdout.
+CLI новой серии — python -m src.pretrained_series; тот же 05_pretrained.ipynb.
+По умолчанию группа cheap (A–D), SMOKE_ONLY=True, ALLOW_TRAINING=False.
+E/F требуют явного --allow-training. Модели проходят val → test, сохраняют
+вероятности и submission; test labels не читаются. MAP Viterbi labels и marginals
+сохраняются раздельно; метрики и submission используют MAP labels.
+019 val переиспользуется из проверенного Input; недостающий test дополняется.
+Вероятности backbone кэшируются независимо; записи сохраняются для resume.
+Компактный ZIP включает результаты/вероятности/код, исключает сигналы и веса.
+Обученные best/last checkpoints выгружаются отдельно. Одно устройство на процесс;
+две T4 не объединяются в 32 ГБ. Подробности — docs/pretrained_series_runbook.md.
+Smoke не попадает в журнал.
+NPZ предсказаний должны читаться с allow_pickle=False: subject_id сохраняем
+как Unicode, без object-массивов. Исходные Kaggle ZIP сохранены в
+artefacts/archives/pretrained; проверка импорта и исправление сериализации —
+в artefacts/imports/pretrained. Вероятности и метки при исправлении не менялись.
+008 оставлен нетронутым; следующие новые ID начинаются с 058.
 Другие семейства моделей остаются каркасом. Проверенные команды и ограничения
 смотри в README. Полную серию выполняем на Kaggle; smoke не является экспериментом
 качества и не записывается в experiments.csv.
@@ -66,6 +113,11 @@ CatBoost закрыт, 012–014 отменены и запрещены к за�
 в `pyproject.toml`, фиксируй их в `uv.lock`; оба файла должны версионироваться.
 Python 3.14 выбран в `.python-version`, требование проекта — `>=3.14`. Не меняй
 версию без конкретного обоснования совместимостью библиотек или средой Kaggle.
+Pretrained имеет отдельные environments/pretrained/pyproject.toml и uv.lock:
+Python 3.12, PyTorch 2.6 (CUDA 12.4 на Linux, CPU на Windows), Braindecode на
+фиксированном Git revision. Это изолированное окружение для официальных моделей;
+корневое окружение LR/бустингов не меняется. Общие модули, импортируемые pretrained,
+должны оставаться совместимыми с Python 3.12. Ruff targets для новых файлов заданы явно.
 В Kaggle явно проверяй Python, GPU и CUDA перед выбором сборки PyTorch.
 
 Подключены NumPy, Polars, SciPy, pandas, Matplotlib, Seaborn, tqdm и ранее добавленный marimo;

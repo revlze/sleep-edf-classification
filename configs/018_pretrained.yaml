@@ -1,0 +1,58 @@
+# Hypothesis: zero-shot official checkpoints; no training or val tuning.
+experiment_id: 018_pretrained
+seed: 42
+summary: SleepFMStager; BAS-only; six-patch probability mean
+data:
+  version: full_psg_v1
+  root: data/raw
+  split: val
+  input_units: microvolts
+  input_channels:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+model:
+  family: sleepfm
+  name: SleepFMStager
+  checkpoint: sleepfm-stager.safetensors
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  checkpoint_sha256: 6a0cdbee2fc6eaf5383cc85984f0b30f4911ac8ca6254ddd5bb1fbecdad3039a
+preprocessing:
+  sampling_rate: 128
+  scope: per_contiguous_segment
+  units_conversion: microvolts_to_volts
+  resampling: upstream_linear_interpolation
+  normalization: channel_mean_std_ddof0_no_clip
+inference:
+  core_epochs: 640
+  halo_epochs: 160
+  precision: float32
+  aggregation: mean_six_patch_softmax
+  chunking: overlap_discard_halo_no_cross_gap
+  context_limit: Blocks approximate global temporal context; encoder phase aligned
+    to 10 epochs (SleepFM) / 16 epochs (U-Net).
+  right_boundary: native_partial_5min_chunk
+training:
+  enabled: false
+evaluation:
+  protocol: zero_shot_provided_val
+  limitation: Provided val was used repeatedly. AnySleep/U-Sleep pretraining includes
+    Sleep-EDF (author split differs from course split); no claim of unseen-subject
+    generalization. SleepFM staging trained on SSC/MESA/MrOS/SHHS; BAS-only is a reduced-modality
+    evaluation. Chunked context and per-segment normalization differ from a full EDF
+    night.
+provenance:
+  source: https://github.com/zou-group/sleepfm-clinical
+  source_revision: 2bcbae04c3592f61352addb7ac3d4193f0a3ca25
+  implementation_revision: 2482cb5a9511bf5d2f34fbcaefd6338a472aaedd
+  checkpoint_revision: 95903b507c183bc6154e7a1bda064d6b043d5b8a
+  license: CC-BY-NC-4.0
+  preprocessing_source: sleepfm/preprocessing/preprocessing.py::resample_signals
+paths:
+  output_root: artefacts
+  checkpoint_cache: artefacts/checkpoints/pretrained

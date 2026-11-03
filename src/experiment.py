@@ -1,6 +1,5 @@
 """Запуск экспериментов из YAML, воспроизводимость и независимый CSV-журнал."""
 
-import csv
 import hashlib
 import json
 import re
@@ -12,6 +11,7 @@ from omegaconf import OmegaConf
 
 from src.data import data_fingerprint, load_labels
 from src.features import build_feature_table
+from src.journal import upsert_result
 from src.storage import canonical_fingerprint, file_lock
 from src.training.tabular import grouped_folds, run_linear, save_json
 
@@ -33,6 +33,7 @@ def source_fingerprint() -> str:
         "inference.py",
         "progress.py",
         "storage.py",
+        "journal.py",
     )
     paths = [PROJECT_ROOT / "src" / name for name in modules] + [
         PROJECT_ROOT / "uv.lock"
@@ -133,76 +134,57 @@ def select_parent(config: dict, namespace: Path) -> dict:
 
 
 def update_journal(config: dict, metrics: dict, folder: Path) -> None:
-    path = PROJECT_ROOT / "experiments.csv"
-    with file_lock(path.with_suffix(".csv.lock"), wait=True):
-        with path.open(encoding="utf-8", newline="") as stream:
-            reader = csv.DictReader(stream)
-            fields = list(reader.fieldnames)
-            rows = list(reader)
-        tree = (
-            config["model"]["type"] in ("lightgbm", "catboost")
-            if "type" in config["model"]
-            else False
+    tree = (
+        config["model"]["type"] in ("lightgbm", "catboost")
+        if "type" in config["model"]
+        else False
+    )
+    extras = ["best_c", "oof_macro_f1", "fixed_oof_macro_f1", "fold_f1_std"]
+    single_fit = metrics.get("evaluation_protocol") == "train_val_fixed"
+    if tree:
+        extras += ["best_params", "best_iterations"]
+    if single_fit:
+        extras += ["fixed_params", "iterations"]
+    result = metrics["val"]["fixed" if single_fit else "tuned"]
+    row = {
+        "experiment_id": config["experiment_id"],
+        "config": str(Path(config["config_path"]).relative_to(PROJECT_ROOT)),
+        "model": config["model"]["type"] if tree else "LogisticRegression",
+        "summary": f"{config['features']['context']}; {config['preprocessing']['transform']}; weights={config['model']['class_weight']}",
+        "seed": config["seed"],
+        "evaluation_set": "provided_val_fixed_no_cv"
+        if single_fit
+        else "provided_val_after_train_group_cv",
+        "macro_f1": result["macro_f1"],
+        "train_seconds": metrics["fit_seconds"]
+        if single_fit
+        else metrics["search_seconds"] + metrics["refit_seconds"],
+        "infer_seconds": metrics["inference_seconds"],
+        "status": "complete",
+        "artefacts_path": str(folder),
+        "best_c": "" if tree else metrics["tuned"]["C"],
+        "oof_macro_f1": "" if single_fit else metrics["tuned"]["oof"]["macro_f1"],
+        "fixed_oof_macro_f1": "" if single_fit else metrics["fixed"]["oof"]["macro_f1"],
+        "fold_f1_std": "" if single_fit else metrics["tuned"]["fold_f1_std"],
+    }
+    if tree:
+        row["best_params"] = (
+            "" if single_fit else json.dumps(metrics["tuned"]["params"], sort_keys=True)
         )
-        extras = ["best_c", "oof_macro_f1", "fixed_oof_macro_f1", "fold_f1_std"]
-        single_fit = metrics.get("evaluation_protocol") == "train_val_fixed"
-        if tree:
-            extras += ["best_params", "best_iterations"]
-        if single_fit:
-            extras += ["fixed_params", "iterations"]
-        for extra in extras:
-            if extra not in fields:
-                fields.append(extra)
-        result = metrics["val"]["fixed" if single_fit else "tuned"]
-        row = {
-            "experiment_id": config["experiment_id"],
-            "config": str(Path(config["config_path"]).relative_to(PROJECT_ROOT)),
-            "model": config["model"]["type"] if tree else "LogisticRegression",
-            "summary": f"{config['features']['context']}; {config['preprocessing']['transform']}; weights={config['model']['class_weight']}",
-            "seed": config["seed"],
-            "evaluation_set": "provided_val_fixed_no_cv"
-            if single_fit
-            else "provided_val_after_train_group_cv",
-            "macro_f1": result["macro_f1"],
-            "train_seconds": metrics["fit_seconds"]
-            if single_fit
-            else metrics["search_seconds"] + metrics["refit_seconds"],
-            "infer_seconds": metrics["inference_seconds"],
-            "status": "complete",
-            "artefacts_path": str(folder),
-            "best_c": "" if tree else metrics["tuned"]["C"],
-            "oof_macro_f1": "" if single_fit else metrics["tuned"]["oof"]["macro_f1"],
-            "fixed_oof_macro_f1": ""
-            if single_fit
-            else metrics["fixed"]["oof"]["macro_f1"],
-            "fold_f1_std": "" if single_fit else metrics["tuned"]["fold_f1_std"],
-        }
-        if tree:
-            row["best_params"] = (
-                ""
-                if single_fit
-                else json.dumps(metrics["tuned"]["params"], sort_keys=True)
-            )
-            row["best_iterations"] = "" if single_fit else result["iterations"]
-        if single_fit:
-            row["fixed_params"] = json.dumps(result["params"], sort_keys=True)
-            row["iterations"] = result["iterations"]
-        row.update(
-            dict(
-                zip(
-                    ("f1_w", "f1_n1", "f1_n2", "f1_n3", "f1_rem"),
-                    result["f1"],
-                    strict=True,
-                )
+        row["best_iterations"] = "" if single_fit else result["iterations"]
+    if single_fit:
+        row["fixed_params"] = json.dumps(result["params"], sort_keys=True)
+        row["iterations"] = result["iterations"]
+    row.update(
+        dict(
+            zip(
+                ("f1_w", "f1_n1", "f1_n2", "f1_n3", "f1_rem"),
+                result["f1"],
+                strict=True,
             )
         )
-        rows = [r for r in rows if r["experiment_id"] != row["experiment_id"]] + [row]
-        temp = path.with_suffix(".csv.tmp")
-        with temp.open("w", encoding="utf-8", newline="") as stream:
-            writer = csv.DictWriter(stream, fieldnames=fields)
-            writer.writeheader()
-            writer.writerows(rows)
-        temp.replace(path)
+    )
+    upsert_result(PROJECT_ROOT / "experiments.csv", row, extras)
 
 
 def run_experiment(

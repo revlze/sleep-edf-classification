@@ -1,0 +1,64 @@
+# Hypothesis: zero-shot official checkpoints; no training or val tuning.
+experiment_id: 019_pretrained
+seed: 42
+summary: AnySleep run1/2/3; fixed equal probability mean
+data:
+  version: full_psg_v1
+  root: data/raw
+  split: val
+  input_units: microvolts
+  input_channels:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+model:
+  family: anysleep
+  name: AnySleepEnsemble
+  checkpoint:
+  - anysleep-run1.pth
+  - anysleep-run2.pth
+  - anysleep-run3.pth
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  checkpoint_sha256:
+  - 9f305c0f81a58d36092bb88b04832a48f0f4dae940f31486cd2284e9c659483f
+  - dde1e762718787e6705c0169f30cc43be2a7681fba82e83a5a01c11c70987902
+  - ac846afe53ccd9761455b53279a5102cbde92904526cbad6778b3b4ea91581d1
+preprocessing:
+  sampling_rate: 128
+  scope: per_contiguous_segment
+  units_conversion: microvolts_to_volts
+  resampling: scipy_resample_poly_128_100
+  normalization: clip_plusminus_20IQR_then_RobustScaler
+inference:
+  core_epochs: 128
+  halo_epochs: 64
+  precision: float32
+  aggregation: equal_checkpoint_softmax_mean
+  chunking: overlap_discard_halo_no_cross_gap
+  context_limit: Blocks approximate global temporal context; encoder phase aligned
+    to 10 epochs (SleepFM) / 16 epochs (U-Net).
+  right_boundary: match_full_segment_pool_phase_mod16_extend_real_context_upto15_epochs
+training:
+  enabled: false
+evaluation:
+  protocol: zero_shot_provided_val
+  limitation: Provided val was used repeatedly. AnySleep/U-Sleep pretraining includes
+    Sleep-EDF (author split differs from course split); no claim of unseen-subject
+    generalization. SleepFM staging trained on SSC/MESA/MrOS/SHHS; BAS-only is a reduced-modality
+    evaluation. Chunked context and per-segment normalization differ from a full EDF
+    night.
+provenance:
+  source: https://github.com/dslaborg/AnySleep
+  source_revision: 899bfff284f3eb3e7448bc90990f2230757470a2
+  implementation_revision: 899bfff284f3eb3e7448bc90990f2230757470a2
+  checkpoint_revision: 899bfff284f3eb3e7448bc90990f2230757470a2
+  license: MIT
+  preprocessing_source: examples/predict_edf_file_logits_plain.py::preprocess
+paths:
+  output_root: artefacts
+  checkpoint_cache: artefacts/checkpoints/pretrained

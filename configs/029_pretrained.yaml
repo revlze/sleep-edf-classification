@@ -1,0 +1,63 @@
+# Hypothesis: AnySleep run1 HF4; author mean-logit soft vote; fixed recipe, no val/test search.
+experiment_id: 029_pretrained
+seed: 42
+summary: AnySleep run1 HF4; author mean-logit soft vote
+mode: zero_shot
+data:
+  version: full_psg_v1
+  root: data/raw
+  evaluation_order:
+  - val
+  - test
+model:
+  kind: frozen_probability_recipe
+  recipe:
+    kind: anysleep
+    variant: base
+    checkpoint: anysleep-run1.pth
+    frequency: 4
+    voting: soft
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+training:
+  enabled: false
+preprocessing:
+  anysleep: 128 Hz; polyphase; clip +/-20IQR then RobustScaler per true contiguous
+    segment
+  tiny: 100 Hz microvolts; upstream raw Butterworth .3-40 Hz order5 SOS zero-phase;
+    no zscore
+  boundaries: record/gap independent; U-Net phase aligned at both ends using real
+    context
+inference:
+  core_epochs: 128
+  halo_epochs: 64
+  right_phase_mod_epochs: 16
+  tiny_sequence_length: 20
+  precision: float32
+  hf_soft_vote: softmax(mean within-epoch logits); signal sampling stays 128 Hz
+  ensemble: fixed weighted probability mean; no optimization
+evaluation:
+  protocol: provided_val_then_unlabelled_test
+  fitted_statistics: train_only
+  author_groups: separate author_train vs outside_author_train on labelled splits
+  limitation: provided val repeatedly used; AnySleep author cohort overlaps course
+    splits; no hidden test labels
+paths:
+  output_root: artefacts
+  prediction_cache: artefacts/predictions
+  signal_cache: artefacts/cache/neural
+  trained_checkpoints: artefacts/trained-checkpoints
+provenance:
+  anysleep_revision: 899bfff284f3eb3e7448bc90990f2230757470a2
+  physioex_revision: 66b24320aa39bc635e304b0891eff41131ca54a5
+  physioex_checkpoint_revision: fc362d1976a203f9bf47cd5072845615d573aae2
+  checkpoint_checksums: pinned src/series_assets.py + src/models/pretrained_assets.py;
+    resolved manifest saved per run
+  licenses:
+    anysleep_code_and_weights: MIT
+    physioex_code: MIT
+    physioex_weights: Apache-2.0

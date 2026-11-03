@@ -5,14 +5,21 @@
     "db19b999306a66ccaa3aaa6bd523ee1fd3e7a03061884fc750d62354ec278646": "34ef96559e5ad21aaee11075aee6675aa3eed7e72144b22555ce4baeffa24e5e",
     "d4fb54e8a1d4a2622200ae6e94279b2b3048637f3c12fdce8e6215f2cb97a669": "34ef96559e5ad21aaee11075aee6675aa3eed7e72144b22555ce4baeffa24e5e",
     "65335537d94a5b49e54c8ce9b0807fd5dfeeef48712af9eccd1b9f872cd9fac6": "34ef96559e5ad21aaee11075aee6675aa3eed7e72144b22555ce4baeffa24e5e",
-    "814fdb30badeced3c011ce202b89e28becdf253b37cd0e3d84639ee735b2d6e4": "34ef96559e5ad21aaee11075aee6675aa3eed7e72144b22555ce4baeffa24e5e"
+    "814fdb30badeced3c011ce202b89e28becdf253b37cd0e3d84639ee735b2d6e4": "34ef96559e5ad21aaee11075aee6675aa3eed7e72144b22555ce4baeffa24e5e",
+    "e0a8ea99be862e98133012884032edda23bc80865e455e2e485eecdf0dbb520b": "34ef96559e5ad21aaee11075aee6675aa3eed7e72144b22555ce4baeffa24e5e",
+    "a7253d5b11b8ef9ae8b7d403cdcf204675343edc78dec3ac70fde87b1c6957ab": "34ef96559e5ad21aaee11075aee6675aa3eed7e72144b22555ce4baeffa24e5e"
   },
   "features": {
     "22cfc629776f893565dd648dab04ae481e010d2d563e47c259fd515cbcee3860": "70e78fdbcc01b1a4df26852906f28fb38bb4f86d3a8654b521c0abba4d9b1abe"
   },
-  "reason": "Exact source hash pairs preserve calculations after per-resource locking and atomic publication. Numerical data, preprocessing, LR and tabular training functions are unchanged. Feature aliases preserve the verified cache-lock migration. Windows-only portalocker dependency and platform lock dispatch preserve the numerical pipeline; POSIX locking is unchanged. Tree dispatch, optional cache path for inference and journal/comparison extensions leave LR numerical functions and all previously locked package versions unchanged. Added an explicitly fixed train/val path and reporting of absent OOF; existing LR and tree CV numerical fit/predict functions are unchanged. New aliases preserve existing checkpoints; this preparation was not executed or tested. Formatting-only merge preparation: all Python and notebook code ASTs verified identical; cache extractor files unchanged. Exact new source hashes preserve completed checkpoints.",
+  "reason": "Exact source hash pairs preserve calculations after per-resource locking and atomic publication. Numerical data, preprocessing, LR and tabular training functions are unchanged. Feature aliases preserve the verified cache-lock migration. Windows-only portalocker dependency and platform lock dispatch preserve the numerical pipeline; POSIX locking is unchanged. Tree dispatch, optional cache path for inference and journal/comparison extensions leave LR numerical functions and all previously locked package versions unchanged. Added an explicitly fixed train/val path and reporting of absent OOF; existing LR and tree CV numerical fit/predict functions are unchanged. New aliases preserve existing checkpoints; this preparation was not executed or tested. Formatting-only merge preparation: all Python and notebook code ASTs verified identical; cache extractor files unchanged. Exact new source hashes preserve completed checkpoints. Pretrained preparation extracts CSV persistence into src.journal; old/new LR CV, tree CV and fixed-tree CSV outputs verified byte-for-byte. All old experiment and boosting numerical function ASTs unchanged; only source manifests and journal persistence changed. Exact new LF and local source hashes preserve completed model compatibility. Pretrained subject_id serialization fix: only object-to-Unicode metadata conversion and canonical source hashing changed; model probabilities, IDs, labels and metrics stay unchanged. Exact source alias retains completed zero-shot contracts. Stage-2 preparation extends only result ZIP selection in legacy pretrained.py; all numerical legacy function ASTs are unchanged. Exact alias retains original zero-shot checkpoint contracts.",
   "tree": {
     "c706d3e231c5705b8599f38f016350f1ad5afb04e79a98e273d4259181fefe71": "4710a18c5058bb661924346dd69304751f3db8d7896365203ea29e5eae4909ee",
-    "ab72bed832b4ec21dc5a14cff5582dd7b730137a958259f9f03aec64a6e0c1d1": "4710a18c5058bb661924346dd69304751f3db8d7896365203ea29e5eae4909ee"
+    "ab72bed832b4ec21dc5a14cff5582dd7b730137a958259f9f03aec64a6e0c1d1": "4710a18c5058bb661924346dd69304751f3db8d7896365203ea29e5eae4909ee",
+    "7de2723e440918aceb07063db8e6329d76e2182871f291389c388e665357ff9f": "4710a18c5058bb661924346dd69304751f3db8d7896365203ea29e5eae4909ee"
+  },
+  "pretrained": {
+    "23fe93d52ecbfb12c75a3f30d37d8fbf326edfd42c15ec885b8e9f096aa6b000": "28fc485db2e55e6177c74ec8c061de7ff3f7cb26d2ccfcafb590f9fdbb00714e",
+    "58193264c0263e275e89a884eab46e32e668ce0de77f4356a516e8f003b33cb0": "28fc485db2e55e6177c74ec8c061de7ff3f7cb26d2ccfcafb590f9fdbb00714e"
   }
 }
