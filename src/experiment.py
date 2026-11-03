@@ -139,27 +139,54 @@ def update_journal(config: dict, metrics: dict, folder: Path) -> None:
             reader = csv.DictReader(stream)
             fields = list(reader.fieldnames)
             rows = list(reader)
-        for extra in ("best_c", "oof_macro_f1", "fixed_oof_macro_f1", "fold_f1_std"):
+        tree = (
+            config["model"]["type"] in ("lightgbm", "catboost")
+            if "type" in config["model"]
+            else False
+        )
+        extras = ["best_c", "oof_macro_f1", "fixed_oof_macro_f1", "fold_f1_std"]
+        single_fit = metrics.get("evaluation_protocol") == "train_val_fixed"
+        if tree:
+            extras += ["best_params", "best_iterations"]
+        if single_fit:
+            extras += ["fixed_params", "iterations"]
+        for extra in extras:
             if extra not in fields:
                 fields.append(extra)
-        result = metrics["val"]["tuned"]
+        result = metrics["val"]["fixed" if single_fit else "tuned"]
         row = {
             "experiment_id": config["experiment_id"],
             "config": str(Path(config["config_path"]).relative_to(PROJECT_ROOT)),
-            "model": "LogisticRegression",
+            "model": config["model"]["type"] if tree else "LogisticRegression",
             "summary": f"{config['features']['context']}; {config['preprocessing']['transform']}; weights={config['model']['class_weight']}",
             "seed": config["seed"],
-            "evaluation_set": "provided_val_after_train_group_cv",
+            "evaluation_set": "provided_val_fixed_no_cv"
+            if single_fit
+            else "provided_val_after_train_group_cv",
             "macro_f1": result["macro_f1"],
-            "train_seconds": metrics["search_seconds"] + metrics["refit_seconds"],
+            "train_seconds": metrics["fit_seconds"]
+            if single_fit
+            else metrics["search_seconds"] + metrics["refit_seconds"],
             "infer_seconds": metrics["inference_seconds"],
             "status": "complete",
             "artefacts_path": str(folder),
-            "best_c": metrics["tuned"]["C"],
-            "oof_macro_f1": metrics["tuned"]["oof"]["macro_f1"],
-            "fixed_oof_macro_f1": metrics["fixed"]["oof"]["macro_f1"],
-            "fold_f1_std": metrics["tuned"]["fold_f1_std"],
+            "best_c": "" if tree else metrics["tuned"]["C"],
+            "oof_macro_f1": "" if single_fit else metrics["tuned"]["oof"]["macro_f1"],
+            "fixed_oof_macro_f1": ""
+            if single_fit
+            else metrics["fixed"]["oof"]["macro_f1"],
+            "fold_f1_std": "" if single_fit else metrics["tuned"]["fold_f1_std"],
         }
+        if tree:
+            row["best_params"] = (
+                ""
+                if single_fit
+                else json.dumps(metrics["tuned"]["params"], sort_keys=True)
+            )
+            row["best_iterations"] = "" if single_fit else result["iterations"]
+        if single_fit:
+            row["fixed_params"] = json.dumps(result["params"], sort_keys=True)
+            row["iterations"] = result["iterations"]
         row.update(
             dict(
                 zip(
