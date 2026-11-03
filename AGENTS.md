@@ -57,13 +57,29 @@ CatBoost закрыт, 012–014 отменены и запрещены к за�
 Для zero-shot серии завершены 016_pretrained (AnySleep run1), 017_pretrained
 (U-Sleep run1, голосование двух EEG/EOG-пар), 018_pretrained (SleepFMStager,
 три BAS-канала) и 019_pretrained (равное среднее AnySleep run1/2/3).
-CLI — python -m src.pretrained, Kaggle launcher — notebooks/05_pretrained.ipynb.
-Обучения и подбора нет. Записи сохраняются отдельно; smoke не попадает в журнал.
+CLI исходных 016–019 — python -m src.pretrained.
+Следующая серия подготовлена, полноценные запуски ещё не выполнены:
+020–028 — AnySleep Early/Late Fusion и фиксированные ансамбли;
+029–036 — HF4/HF8 soft/hard и ансамбли, 034/036 запускаются отдельным этапом;
+037–040 — train-only дискриминативный Viterbi; 041–043 — TinySleepNet по двум EEG;
+044–045 — residual CNN на вероятностях, grouped CV и full-train refit;
+046–048 — classifier/partial/full fine-tuning AnySleep run1 с train subject holdout.
+CLI новой серии — python -m src.pretrained_series; тот же 05_pretrained.ipynb.
+По умолчанию группа cheap (A–D), SMOKE_ONLY=True, ALLOW_TRAINING=False.
+E/F требуют явного --allow-training. Модели проходят val → test, сохраняют
+вероятности и submission; test labels не читаются. MAP Viterbi labels и marginals
+сохраняются раздельно; метрики и submission используют MAP labels.
+019 val переиспользуется из проверенного Input; недостающий test дополняется.
+Вероятности backbone кэшируются независимо; записи сохраняются для resume.
+Компактный ZIP включает результаты/вероятности/код, исключает сигналы и веса.
+Обученные best/last checkpoints выгружаются отдельно. Одно устройство на процесс;
+две T4 не объединяются в 32 ГБ. Подробности — docs/pretrained_series_runbook.md.
+Smoke не попадает в журнал.
 NPZ предсказаний должны читаться с allow_pickle=False: subject_id сохраняем
 как Unicode, без object-массивов. Исходные Kaggle ZIP сохранены в
 artefacts/archives/pretrained; проверка импорта и исправление сериализации —
 в artefacts/imports/pretrained. Вероятности и метки при исправлении не менялись.
-008 оставлен нетронутым; следующие новые ID начинаются с 020.
+008 оставлен нетронутым; следующие новые ID начинаются с 049.
 Другие семейства моделей остаются каркасом. Проверенные команды и ограничения
 смотри в README. Полную серию выполняем на Kaggle; smoke не является экспериментом
 качества и не записывается в experiments.csv.
