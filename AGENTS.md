@@ -54,11 +54,15 @@ CatBoost закрыт, 012–014 отменены и запрещены к за�
 Нет CV, screening, search, выбора родителя и early stopping; OOF отсутствует.
 Табличная серия закрыта. Сохраняем 005/007_linear и 011_tree как контрольные
 модели; 015_tree — завершённая проверка multi-resolution без выигрыша macro-F1.
-Для zero-shot серии подготовлены 016_pretrained (AnySleep run1), 017_pretrained
+Для zero-shot серии завершены 016_pretrained (AnySleep run1), 017_pretrained
 (U-Sleep run1, голосование двух EEG/EOG-пар), 018_pretrained (SleepFMStager,
-три BAS-канала) и необязательный 019_pretrained (равное среднее AnySleep run1/2/3).
+три BAS-канала) и 019_pretrained (равное среднее AnySleep run1/2/3).
 CLI — python -m src.pretrained, Kaggle launcher — notebooks/05_pretrained.ipynb.
 Обучения и подбора нет. Записи сохраняются отдельно; smoke не попадает в журнал.
+NPZ предсказаний должны читаться с allow_pickle=False: subject_id сохраняем
+как Unicode, без object-массивов. Исходные Kaggle ZIP сохранены в
+artefacts/archives/pretrained; проверка импорта и исправление сериализации —
+в artefacts/imports/pretrained. Вероятности и метки при исправлении не менялись.
 008 оставлен нетронутым; следующие новые ID начинаются с 020.
 Другие семейства моделей остаются каркасом. Проверенные команды и ограничения
 смотри в README. Полную серию выполняем на Kaggle; smoke не является экспериментом
