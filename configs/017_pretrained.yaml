@@ -1,0 +1,58 @@
+# Hypothesis: zero-shot official checkpoints; no training or val tuning.
+experiment_id: 017_pretrained
+seed: 42
+summary: U-Sleep run1; two EEG/EOG pairs; author hard majority
+data:
+  version: full_psg_v1
+  root: data/raw
+  split: val
+  input_units: microvolts
+  input_channels:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+model:
+  family: usleep
+  name: usleep
+  checkpoint: usleep-run1.pth
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  checkpoint_sha256: eb88c447b543918f2e16a2ce3f4d40e9ae975b07b34f4709568d3a66ff2287ee
+preprocessing:
+  sampling_rate: 128
+  scope: per_contiguous_segment
+  units_conversion: microvolts_to_volts
+  resampling: scipy_resample_poly_128_100
+  normalization: clip_plusminus_20IQR_then_RobustScaler
+inference:
+  core_epochs: 128
+  halo_epochs: 64
+  precision: float32
+  aggregation: two_pair_hard_vote_tie_lowest_class
+  chunking: overlap_discard_halo_no_cross_gap
+  context_limit: Blocks approximate global temporal context; encoder phase aligned
+    to 10 epochs (SleepFM) / 16 epochs (U-Net).
+  right_boundary: match_full_segment_pool_phase_mod16_extend_real_context_upto15_epochs
+training:
+  enabled: false
+evaluation:
+  protocol: zero_shot_provided_val
+  limitation: Provided val was used repeatedly. AnySleep/U-Sleep pretraining includes
+    Sleep-EDF (author split differs from course split); no claim of unseen-subject
+    generalization. SleepFM staging trained on SSC/MESA/MrOS/SHHS; BAS-only is a reduced-modality
+    evaluation. Chunked context and per-segment normalization differ from a full EDF
+    night.
+provenance:
+  source: https://github.com/dslaborg/AnySleep
+  source_revision: 899bfff284f3eb3e7448bc90990f2230757470a2
+  implementation_revision: 899bfff284f3eb3e7448bc90990f2230757470a2
+  checkpoint_revision: 899bfff284f3eb3e7448bc90990f2230757470a2
+  license: MIT
+  preprocessing_source: examples/predict_edf_file_logits_plain.py::preprocess
+paths:
+  output_root: artefacts
+  checkpoint_cache: artefacts/checkpoints/pretrained
