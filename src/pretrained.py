@@ -599,7 +599,9 @@ def _run_model(
         torch.cuda.empty_cache()
 
 
-def export_results(root: Path, archive: Path) -> None:
+def export_results(
+    root: Path, archive: Path, *, extra_roots: tuple[str, ...] = ()
+) -> None:
     """Complete runs: final predictions only; incomplete runs retain record resume files."""
     root, archive = root.resolve(), archive.resolve()
     if not root.is_dir():
@@ -607,10 +609,12 @@ def export_results(root: Path, archive: Path) -> None:
     if archive.is_relative_to(root) or archive.exists():
         raise ValueError("ZIP must be new and outside output root")
     with file_lock(root / ".pretrained-export.lock", wait=True):
-        _export_results(root, archive)
+        _export_results(root, archive, extra_roots)
 
 
-def _export_results(root: Path, archive: Path) -> None:
+def _export_results(
+    root: Path, archive: Path, extra_roots: tuple[str, ...] = ()
+) -> None:
     with atomic_path(archive) as temp:
         with ZipFile(temp, "w", compression=ZIP_DEFLATED, compresslevel=6) as out:
             for path in sorted(root.rglob("*")):
@@ -630,18 +634,27 @@ def _export_results(root: Path, archive: Path) -> None:
                 experiment = (
                     parts[1] if parts[0] == "smoke" and len(parts) > 1 else parts[0]
                 )
-                if not re.fullmatch(
-                    r"\d{3}_pretrained", experiment
-                ) and relative.as_posix() not in (
-                    "experiments.csv",
-                    "failures.json",
-                    "smoke_failures.json",
-                    "notebook_failures.json",
+                if (
+                    experiment not in extra_roots
+                    and not re.fullmatch(r"\d{3}_pretrained", experiment)
+                    and relative.as_posix()
+                    not in (
+                        "experiments.csv",
+                        "failures.json",
+                        "smoke_failures.json",
+                        "notebook_failures.json",
+                    )
                 ):
                     continue
                 if (
                     "records" in relative.parts
                     and (path.parent.parent / "metrics.json").exists()
+                ):
+                    continue
+                if (
+                    "predictions" in parts
+                    and "records" in parts
+                    and (path.parents[2] / f"{path.parent.name}.json").exists()
                 ):
                     continue
                 if (
