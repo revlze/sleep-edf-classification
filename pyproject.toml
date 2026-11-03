@@ -6,7 +6,9 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "antropy>=0.2.3",
+    "catboost>=1.2.10",
     "joblib>=1.6.0",
+    "lightgbm>=4.7.0",
     "marimo>=0.25.2",
     "matplotlib>=3.11.2",
     "numpy>=2.5.4",
