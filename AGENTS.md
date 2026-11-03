@@ -54,8 +54,12 @@ CatBoost закрыт, 012–014 отменены и запрещены к за�
 Нет CV, screening, search, выбора родителя и early stopping; OOF отсутствует.
 Табличная серия закрыта. Сохраняем 005/007_linear и 011_tree как контрольные
 модели; 015_tree — завершённая проверка multi-resolution без выигрыша macro-F1.
-Дальше обсуждаем pretrained-модели; их реализация ещё не начата.
-008 оставлен нетронутым; следующие новые ID начинаются с 016.
+Для zero-shot серии подготовлены 016_pretrained (AnySleep run1), 017_pretrained
+(U-Sleep run1, голосование двух EEG/EOG-пар), 018_pretrained (SleepFMStager,
+три BAS-канала) и необязательный 019_pretrained (равное среднее AnySleep run1/2/3).
+CLI — python -m src.pretrained, Kaggle launcher — notebooks/05_pretrained.ipynb.
+Обучения и подбора нет. Записи сохраняются отдельно; smoke не попадает в журнал.
+008 оставлен нетронутым; следующие новые ID начинаются с 020.
 Другие семейства моделей остаются каркасом. Проверенные команды и ограничения
 смотри в README. Полную серию выполняем на Kaggle; smoke не является экспериментом
 качества и не записывается в experiments.csv.
@@ -66,6 +70,11 @@ CatBoost закрыт, 012–014 отменены и запрещены к за�
 в `pyproject.toml`, фиксируй их в `uv.lock`; оба файла должны версионироваться.
 Python 3.14 выбран в `.python-version`, требование проекта — `>=3.14`. Не меняй
 версию без конкретного обоснования совместимостью библиотек или средой Kaggle.
+Pretrained имеет отдельные environments/pretrained/pyproject.toml и uv.lock:
+Python 3.12, PyTorch 2.6 (CUDA 12.4 на Linux, CPU на Windows), Braindecode на
+фиксированном Git revision. Это изолированное окружение для официальных моделей;
+корневое окружение LR/бустингов не меняется. Общие модули, импортируемые pretrained,
+должны оставаться совместимыми с Python 3.12. Ruff targets для новых файлов заданы явно.
 В Kaggle явно проверяй Python, GPU и CUDA перед выбором сборки PyTorch.
 
 Подключены NumPy, Polars, SciPy, pandas, Matplotlib, Seaborn, tqdm и ранее добавленный marimo;
