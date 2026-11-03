@@ -39,3 +39,11 @@ extend-exclude = ["data", "artefacts", "submissions", "docs", "desc"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "UP"]
+
+[tool.ruff.per-file-target-version]
+"src/pretrained*.py" = "py312"
+"src/models/anysleep.py" = "py312"
+"src/models/sleepfm.py" = "py312"
+"src/models/pretrained_assets.py" = "py312"
+"src/journal.py" = "py312"
+"notebooks/05_pretrained.ipynb" = "py312"
