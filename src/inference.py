@@ -36,9 +36,16 @@ def predict_submission(
     checkpoint: str | Path,
     *,
     data_root: str | Path | None = None,
+    cache_root: str | Path | None = None,
     output: str | Path | None = None,
 ) -> Path:
     checkpoint = Path(checkpoint).resolve()
+    if checkpoint.suffix in (".txt", ".cbm"):
+        from src.training.boosting import predict_tree_submission
+
+        return predict_tree_submission(
+            checkpoint, data_root=data_root, cache_root=cache_root, output=output
+        )
     config = OmegaConf.to_container(
         OmegaConf.load(checkpoint.parent / "resolved.yaml"), resolve=True
     )
@@ -52,7 +59,7 @@ def predict_submission(
         raise ValueError("Experiment is not complete; use a completed checkpoint")
     bundle = joblib.load(checkpoint)
     root = Path(data_root or config["paths"]["data_root"]).resolve()
-    cache = Path(config["paths"]["cache_root"])
+    cache = Path(cache_root or config["paths"]["cache_root"])
     target = Path(
         output or PROJECT_ROOT / "submissions" / f"{config['experiment_id']}.csv"
     ).resolve()
@@ -114,11 +121,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("checkpoint")
     parser.add_argument("--data-root")
+    parser.add_argument("--cache-root")
     parser.add_argument("--output")
     args = parser.parse_args()
     print(
         predict_submission(
-            args.checkpoint, data_root=args.data_root, output=args.output
+            args.checkpoint,
+            data_root=args.data_root,
+            cache_root=args.cache_root,
+            output=args.output,
         )
     )
 

@@ -1,0 +1,39 @@
+# One fixed LightGBM fit: 534 -> 855 features, all other parameters from 011 tuned.
+# No search, CV, parent selection, validation-based early stopping or second refit.
+experiment_id: 015_tree
+seed: 42
+data_revision: full_psg_v1
+paths:
+  data_root: data/raw
+  output_root: artefacts
+  cache_root: artefacts/cache/features
+features:
+  context: multires
+  extractor:
+    epsilon: 1.0e-12
+    welch_nperseg: 500
+    welch_noverlap: 250
+    welch_window: hamming
+    welch_average: median
+    higuchi_kmax: 10
+    permutation_order: 3
+    batch_size: 32
+preprocessing:
+  transform: native_nan
+model:
+  type: lightgbm
+  class_weight: sqrt
+  params:
+    learning_rate: 0.05
+    num_leaves: 31
+    max_depth: 7
+    min_child_samples: 200
+    colsample_bytree: 0.85
+    reg_lambda: 1.0
+training:
+  mode: fixed
+  threads: auto
+  iterations: 420
+evaluation:
+  protocol: train_val_fixed
+  parameter_source: 011_tree/tuned

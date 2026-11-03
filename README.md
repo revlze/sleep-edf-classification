@@ -15,14 +15,14 @@ uv run python -m src.run configs/001_linear.yaml --smoke
 Для полноценного запуска уберите `--smoke`. Пути задаются через
 `--data-root` и `--output-root`; по умолчанию это `data/raw` и `artefacts`.
 Если данные лежат непосредственно в `data/`, добавьте `--data-root data`.
-Локально можно выполнить Run All в `notebooks/02_train.ipynb`: он находит данные
-в `data/raw/` или `data/`, последовательно запускает 001–006 и показывает OOF/val.
-`SMOKE=False` запускает полную серию, `True` — небольшую проверку.
+Локальный запуск — `notebooks/02_train.ipynb`: выбирает LR или бустинги.
+По умолчанию выбран только `015_tree`, `STAGE="fixed"`: один fit LightGBM,
+855 готовых признаков, 420 итераций, без поиска и CV. Кэш должен существовать.
 
 ## Структура
 
 - `src/` — данные, признаки, модели, обучение и оценка.
-- `configs/` — серия `001_linear`–`006_linear`; `007_linear` повторяет 006 с большим лимитом итераций LR.
+- `configs/` — LR `001–007_linear`, LightGBM/CatBoost `009–014_tree`.
 - `notebooks/01_eda.ipynb` — исследование данных.
 - `notebooks/02_train.ipynb` — обучение; `03_eval.ipynb` — сравнение; `04_submit.ipynb` — submission.
 - `notebooks/00_kaggle.ipynb` — запуск на Kaggle и выгрузка результатов одним ZIP.

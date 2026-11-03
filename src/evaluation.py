@@ -58,26 +58,48 @@ def comparison_table(output_root, experiment_ids):
 
     rows = []
     fold_fingerprint = None
+    label_fingerprint = None
     for experiment_id in experiment_ids:
         path = Path(output_root) / experiment_id / "metrics.json"
         provenance = json.loads(
             (path.parent / "provenance.json").read_text(encoding="utf-8")
         )
-        if fold_fingerprint is None:
-            fold_fingerprint = provenance["fold_sha256"]
-        elif provenance["fold_sha256"] != fold_fingerprint:
+        current_fold = provenance.get("fold_sha256")
+        if fold_fingerprint is None and current_fold is not None:
+            fold_fingerprint = current_fold
+        elif current_fold is not None and current_fold != fold_fingerprint:
             raise ValueError("Cannot compare different fold assignments/datasets")
         metrics = json.loads(path.read_text(encoding="utf-8"))
-        for regime in ("fixed", "tuned"):
-            cv = metrics[regime]
+        current_labels = provenance.get("labels_sha256")
+        if current_labels is None:
+            from omegaconf import OmegaConf
+
+            snapshot = OmegaConf.load(path.parent / "resolved.yaml")
+            current_labels = snapshot.runtime.get("labels_sha256")
+        if label_fingerprint is None:
+            label_fingerprint = current_labels
+        elif current_labels is not None and current_labels != label_fingerprint:
+            raise ValueError("Cannot compare different label datasets")
+        single_fit = metrics.get("evaluation_protocol") == "train_val_fixed"
+        for regime in ("fixed",) if single_fit else ("fixed", "tuned"):
+            cv = {} if single_fit else metrics[regime]
             validation = metrics["val"][regime]
             row = {
                 "experiment_id": experiment_id,
                 "regime": regime,
-                "C": cv["C"],
-                "oof_macro_f1": cv["oof"]["macro_f1"],
-                "fold_f1_std": cv["fold_f1_std"],
-                "oof_log_loss": cv["oof"]["log_loss"],
+                "C": cv.get("C"),
+                "params": json.dumps(
+                    validation.get("params", {})
+                    if single_fit
+                    else cv.get("params", {"C": cv.get("C")}),
+                    sort_keys=True,
+                ),
+                "oof_macro_f1": None if single_fit else cv["oof"]["macro_f1"],
+                "fold_f1_std": None if single_fit else cv["fold_f1_std"],
+                "oof_log_loss": None if single_fit else cv["oof"]["log_loss"],
+                "evaluation_protocol": "train_val_fixed"
+                if single_fit
+                else "group_cv_then_val",
                 "val_macro_f1": validation["macro_f1"],
                 "val_log_loss": validation["log_loss"],
             }

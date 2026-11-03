@@ -1,0 +1,67 @@
+# lightgbm, neighbors context, sqrt weights; baseline versus bounded search.
+
+experiment_id: 011_tree
+seed: 42
+data_revision: full_psg_v1
+paths:
+  data_root: data/raw
+  output_root: artefacts
+  cache_root: artefacts/cache/features
+  fold_root: artefacts/splits
+features:
+  context: neighbors
+  extractor:
+    epsilon: 1.0e-12
+    welch_nperseg: 500
+    welch_noverlap: 250
+    welch_window: hamming
+    welch_average: median
+    higuchi_kmax: 10
+    permutation_order: 3
+    batch_size: 32
+preprocessing:
+  transform: native_nan
+model:
+  type: lightgbm
+  class_weight: sqrt
+  params:
+    learning_rate: 0.05
+    num_leaves: 31
+    max_depth: 7
+    min_child_samples: 100
+    colsample_bytree: 0.85
+    reg_lambda: 1.0
+cv:
+  strategy: StratifiedGroupKFold
+  n_splits: 3
+training:
+  threads: auto
+  max_iterations: 2000
+  patience: 100
+search:
+  screen_fold: 0
+  top_k: 2
+  candidates:
+  - learning_rate: 0.05
+    num_leaves: 15
+    max_depth: 7
+    min_child_samples: 200
+    colsample_bytree: 0.85
+    reg_lambda: 1.0
+  - learning_rate: 0.05
+    num_leaves: 31
+    max_depth: 7
+    min_child_samples: 200
+    colsample_bytree: 0.85
+    reg_lambda: 1.0
+  - learning_rate: 0.05
+    num_leaves: 63
+    max_depth: 7
+    min_child_samples: 100
+    colsample_bytree: 0.85
+    reg_lambda: 1.0
+benchmark:
+  iterations: 100
+  max_seconds: 60
+  train_epochs: 50000
+  val_epochs: 20000
