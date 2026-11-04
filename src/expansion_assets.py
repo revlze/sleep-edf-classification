@@ -19,7 +19,23 @@ def checked(path: Path, checksum: str) -> Path:
     return path
 
 
-def fetch(entry: dict, target: Path) -> Path:
+def source_bytes(payload: bytes, checksum: str) -> bytes:
+    """Match pinned source bytes across Git LF/Windows CRLF checkouts only.
+
+    The manifest was built from Windows checkouts. Return only a representation
+    whose complete SHA-256 matches that manifest, never waive the checksum.
+    Binary checkpoints never pass through this function.
+    """
+    if hashlib.sha256(payload).hexdigest() == checksum:
+        return payload
+    lf = payload.replace(b"\r\n", b"\n")
+    for candidate in (lf, lf.replace(b"\n", b"\r\n")):
+        if hashlib.sha256(candidate).hexdigest() == checksum:
+            return candidate
+    raise ValueError("Official source checksum differs beyond LF/CRLF line endings")
+
+
+def fetch(entry: dict, target: Path, *, source_text: bool = False) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
     with file_lock(target.with_suffix(target.suffix + ".lock"), wait=True):
         if not target.exists():
@@ -41,6 +57,10 @@ def fetch(entry: dict, target: Path) -> Path:
                     ):
                         while chunk := response.read(1024 * 1024):
                             stream.write(chunk)
+                if source_text:
+                    temporary.write_bytes(
+                        source_bytes(temporary.read_bytes(), entry["sha256"])
+                    )
                 checked(temporary, entry["sha256"])
         return checked(target, entry["sha256"])
 
@@ -72,14 +92,14 @@ def package(name: str, cache: Path, inputs: Path | None = None) -> Path:
         source = inputs / relative_root / relative if inputs is not None else None
         target = root / relative
         if source is not None and source.is_file():
-            checked(source, info["sha256"])
+            payload = source_bytes(source.read_bytes(), info["sha256"])
             if not target.exists():
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with atomic_path(target) as temporary:
-                    temporary.write_bytes(source.read_bytes())
+                    temporary.write_bytes(payload)
             checked(target, info["sha256"])
         else:
-            fetch(info, target)
+            fetch(info, target, source_text=True)
     return root
 
 

@@ -28,7 +28,7 @@ from src.series_data import (
     save_prediction,
 )
 from src.series_engine import PredictionEngine, base_member, base_recipe
-from src.storage import file_lock
+from src.storage import canonical_fingerprint, file_lock
 
 TINY = {"kind": "tiny", "channel": 0, "checkpoint": "tinysleepnet.pt"}
 BASE = {"kind": "mean", "members": [base_recipe(), TINY], "weights": [0.5, 0.5]}
@@ -57,7 +57,7 @@ def implementation() -> str:
         ],
         Path(__file__).parents[1] / "environments/pretrained/uv.lock",
     ]
-    return fingerprint(
+    digest = fingerprint(
         {
             "files": {
                 p.name: hashlib.sha256(
@@ -69,6 +69,7 @@ def implementation() -> str:
             "assets": MANIFEST,
         }
     )
+    return canonical_fingerprint(digest, "expansion")
 
 
 class ExpansionEngine:

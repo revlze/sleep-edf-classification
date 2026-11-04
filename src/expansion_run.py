@@ -496,9 +496,11 @@ def main():
     with Progress("Новая серия pretrained", len(configs), "эксп.") as progress:
         engine.progress = DetailProgress(progress)
         for path, config in configs:
+            failed = False
             try:
                 run_config(path, config, args, engine, environment)
             except Exception as error:
+                failed = True
                 failure = {
                     "experiment_id": config["experiment_id"],
                     "error": repr(error),
@@ -516,7 +518,8 @@ def main():
             finally:
                 engine.release()
                 gc.collect()
-                progress.update(1, detail=f"{config['experiment_id']} завершён")
+                status = "ошибка" if failed else "готово"
+                progress.update(1, detail=f"{config['experiment_id']}: {status}")
     save_json(root / "expansion_failures.json", failures)
     if failures:
         raise SystemExit(1)
