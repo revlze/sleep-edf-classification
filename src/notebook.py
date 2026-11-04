@@ -58,10 +58,21 @@ class _Output:
         while "\n" in self.pending:
             line, self.pending = self.pending.split("\n", 1)
             if line.startswith(PREFIX):
-                self.progress(json.loads(line[len(PREFIX) :]))
-            else:
-                sys.stdout.write(line + "\n")
-                sys.stdout.flush()
+                payload = line[len(PREFIX) :]
+                try:
+                    state, end = json.JSONDecoder().raw_decode(payload)
+                except json.JSONDecodeError:
+                    # Mixed stdout/stderr can corrupt a progress record. Keep
+                    # the diagnostic output without interrupting the CLI.
+                    pass
+                else:
+                    self.progress(state)
+                    remainder = payload[end:]
+                    if remainder:
+                        self.pending = remainder + "\n" + self.pending
+                    continue
+            sys.stdout.write(line + "\n")
+            sys.stdout.flush()
         if final and self.pending:
             sys.stdout.write(self.pending)
             sys.stdout.flush()
