@@ -75,6 +75,9 @@ def run_command(command: list[str], *, cwd: Path, env: dict | None = None) -> No
         "PYTHONUNBUFFERED": "1",
         "PYTHONIOENCODING": "utf-8",
         "SLEEP_PROGRESS_JSON": "1",
+        # CLI uses a separate environment without the notebook's inline backend.
+        # Set this only for the child; leave plots in the kernel unchanged.
+        "MPLBACKEND": "Agg",
     }
     if env:
         environment.update(env)
