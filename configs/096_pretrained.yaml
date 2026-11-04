@@ -1,0 +1,54 @@
+# Hypothesis: SleepGPT official encoder frozen + trained 1536->5 staging head
+experiment_id: 096_pretrained
+seed: 42
+summary: SleepGPT official encoder frozen + trained 1536->5 staging head
+group: sleepgpt
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  epoch_seconds: 30
+  sampling_rate: 100
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+paths:
+  artefacts: artefacts/096_pretrained
+  submission: submissions/096_pretrained.csv
+model:
+  kind: sleepgpt
+  strategy: frozen
+  checkpoint: sleepgpt.ckpt
+  new_head: true
+  channels:
+    EOG horizontal: 3
+    EEG Fpz-Cz: 5
+    EEG Pz-Oz: 7
+preprocessing:
+  recipe: pinned official adapter; contiguous segments only
+  learned_statistics: training fold only; fixed author record preprocessing allowed
+training:
+  enabled: true
+  lr: 0.001
+  weight_decay: 0.01
+  class_weight: none
+  focal_gamma: 0.0
+  epochs: 4
+  steps_per_epoch: 64
+  batch_size: 2
+  accumulation: 8
+  grad_clip: 1.0
+  patience: 2
+  min_delta: 0.0001
+  early_stop_epochs_per_record: 64
+  refit: median fold best epoch
+evaluation:
+  protocol: train GroupKFold3 -> full-train refit -> provided val -> unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 053_pretrained

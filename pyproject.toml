@@ -54,3 +54,7 @@ select = ["E4", "E7", "E9", "F", "I", "UP"]
 "src/models/tinysleepnet.py" = "py312"
 "src/models/temporal.py" = "py312"
 "src/training/pretrained.py" = "py312"
+"src/expansion_*.py" = "py312"
+"src/models/expansion_official.py" = "py312"
+"src/models/sleepgpt.py" = "py312"
+"src/training/expansion.py" = "py312"
