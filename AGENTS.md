@@ -102,7 +102,32 @@ NPZ предсказаний должны читаться с allow_pickle=False
 как Unicode, без object-массивов. Исходные Kaggle ZIP сохранены в
 artefacts/archives/pretrained; проверка импорта и исправление сериализации —
 в artefacts/imports/pretrained. Вероятности и метки при исправлении не менялись.
-008 оставлен нетронутым; следующие новые ID начинаются с 058.
+008 подтянут из master и оставлен нетронутым; в новой серии не используется.
+Подготовлена серия 058–098, полноценные запуски выполняет пользователь на Kaggle.
+058–063 — шесть оригинальных frozen staging-моделей; 064–081 — фиксированные смеси;
+082–086 — TinySleepNet classifier/full fine-tuning; 087–091 — frozen embeddings;
+092–095 — N1/N2-N3 specialists; 096–097 — SleepGPT encoder + обучаемая staging head;
+098 — выбор двух новых frozen источников по train-level оценке и смесь с 053.
+Новые ID начинаются с 099; подготовленные YAML не означают завершённых экспериментов.
+CLI — python -m src.expansion_run; тот же 05_pretrained.ipynb. По умолчанию frozen,
+SMOKE_ONLY=True, ALLOW_TRAINING=False. Любые обучаемые варианты требуют --allow-training.
+Три общих GroupKFold по subject_id внутри train; refit после выбора только по train.
+Training smoke использует реальные окна около начала сна по train labels:
+старый prefix399 состоял целиком из Wake. Полный train/val/test не меняется,
+сигналы выбранного smoke выравниваются по ID, его метрики не являются оценкой качества.
+Промежуточный early stopping использует фиксированные блоки по всей длине held-out
+записей; итоговый OOF покрывает fold полностью. Tiny BN running stats фиксированы.
+Кэш embeddings/preprocessing отдельный от OUTPUT_ROOT. Старые probabilities и
+результаты сохраняются. D3/D4/E читают только готовые 106 признаков, включая test;
+автоматического переизвлечения нет. Проверяются definition, source, labels и IDs.
+Официальные веса новых моделей закреплены в src/expansion_assets.json и проверяются
+по SHA-256; нет fallback на случайные параметры. SeqSleepNet-phan опубликован с
+метаданными MASS, хотя исходное задание называло Sleep-EDF. SleepFM-2 не получает
+фиктивного ID: указанный авторами публичный репозиторий вернул 404 при проверке.
+SleepGPT использует опубликованный large encoder, EDF channels 3/5/7, оригинальный
+STFT и новую обучаемую Linear(1536,5); partial размораживает blocks10/11 + norm.
+Компактный ZIP исключает сигналы, embeddings и веса; best/last и classifier.joblib
+экспортируются отдельно. Подробности — docs/expansion_runbook.md.
 Другие семейства моделей остаются каркасом. Проверенные команды и ограничения
 смотри в README. Полную серию выполняем на Kaggle; smoke не является экспериментом
 качества и не записывается в experiments.csv.
