@@ -1,0 +1,64 @@
+# Hypothesis: G5 context-aware residual TCN gate over20 epochs
+seed: 42
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  sampling_rate: 100
+  epoch_seconds: 30
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+preprocessing:
+  recipe: verified saved expert probabilities; train-fold imputation and standardization
+  context: real epochs within record_id and consecutive epoch_index; masked right
+    padding
+training:
+  enabled: true
+  optimizer: AdamW
+  lr: 0.0003
+  weight_decay: 0.001
+  epochs: 12
+  patience: 3
+  batch_size: 512
+  regularization: 0.01
+  center_stride: 4
+  grad_clip: 1.0
+  selection: train-only subject GroupKFold3; median best epoch refit
+  expert_cross_fitting: outer held original082/085 OOF; outer train nestedGroupKFold2
+    fixed5epoch experts, cached once
+evaluation:
+  protocol: train subject GroupKFold3 -> full-train refit -> provided val -> unlabelled
+    test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 099_pretrained
+  limitation: official validation reused; author pretraining overlap is separate from
+    downstream subject CV
+experiment_id: 104_pretrained
+summary: G5 context-aware residual TCN gate over20 epochs
+group: gates
+model:
+  kind: gate
+  architecture: tcn
+  hidden: 64
+  features: confidence
+  context: 20
+  prior_weights:
+  - 0.5
+  - 0.25
+  - 0.25
+  zero_initialized_head: true
+  regularization: KL(gate || prior)
+  experts:
+  - '019'
+  - '082'
+  - '085'
+paths:
+  artefacts: artefacts/104_pretrained
+  submission: submissions/104_pretrained.csv
