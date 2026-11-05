@@ -103,12 +103,20 @@ NPZ предсказаний должны читаться с allow_pickle=False
 artefacts/archives/pretrained; проверка импорта и исправление сериализации —
 в artefacts/imports/pretrained. Вероятности и метки при исправлении не менялись.
 008 подтянут из master и оставлен нетронутым; в новой серии не используется.
-Подготовлена серия 058–098, полноценные запуски выполняет пользователь на Kaggle.
+Серия 058–096 завершена пользователем на Kaggle и импортирована: 39 полных прогонов,
+val/test probabilities и submissions проверены, добавлены 39 complete-строк в журнал.
+097 прерван во время OOF fold0, сохранён как interrupted без выдуманных метрик;
+098 выполнен только как smoke, в журнал не добавлен. Веса 096/097 пользователь
+решил не сохранять. ZIP — artefacts/archives/pretrained; аудит импорта —
+artefacts/imports/pretrained_expansion. Анализ качества не выполнялся.
 058–063 — шесть оригинальных frozen staging-моделей; 064–081 — фиксированные смеси;
 082–086 — TinySleepNet classifier/full fine-tuning; 087–091 — frozen embeddings;
 092–095 — N1/N2-N3 specialists; 096–097 — SleepGPT encoder + обучаемая staging head;
 098 — выбор двух новых frozen источников по train-level оценке и смесь с 053.
-Новые ID начинаются с 099; подготовленные YAML не означают завершённых экспериментов.
+Пользователь выбрал только B из временных ансамблей A–M. Он сохранён как
+099_pretrained: 50%019 + 25%082 + 25%085, по готовым val/test probabilities,
+без нового обучения. Это offline_saved_probability_ensemble, отдельный от CLI
+новой серии. Временная папка A–M удалена. Следующий свободный ID — 100.
 CLI — python -m src.expansion_run; тот же 05_pretrained.ipynb. По умолчанию frozen,
 SMOKE_ONLY=True, ALLOW_TRAINING=False. Любые обучаемые варианты требуют --allow-training.
 Три общих GroupKFold по subject_id внутри train; refit после выбора только по train.
