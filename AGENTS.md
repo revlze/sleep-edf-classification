@@ -157,7 +157,7 @@ BestGate/BestTemporal выбираются только по train OOF.117 — �
 TinyFT с покрытием20-эпоховых tiles, sleep/random supplements и равным суммарным
 весом людей в CE. Для сегментов короче20 полные обучающие окна не создаются.
 Порядок групп: prepare -> gates -> wav2sleep -> temporal -> blends -> wav_blend ->
-tiny -> tiny_blends. Следующий свободный ID — 118. Самостоятельно полную серию не запускать.
+tiny -> tiny_blends. Самостоятельно полную серию не запускать.
 Для корректной downstream CV простого повторного разбиения готового082/085 OOF
 недостаточно: возникает утечка через обучение экспертов на других folds.
 prepare один раз строит inner GroupKFold2 внутри каждого из3 outer folds:
@@ -185,6 +185,40 @@ CPU-потоки делятся между процессами. Для кажд
 Результаты, best/last веса и reusable embeddings/nested/folds экспортируются тремя
 ZIP; сигналы/pools не входят в переносимый кэш. Resume требует соответствующих
 RESUME_ROOT, RESUME_TRAINED_ROOT и RESUME_CACHE_ROOT и той же версии кода.
+Подготовлена inference-only серия118–123, CLI python -m src.voting_run, тот же05_pretrained.ipynb.
+118/119/120 — PhysioEx logit voting исходных041/082/085, L20.121 — 50%019+50%118;
+122 — 50%019+25%119+25%120;123 — 50%019+25%118+12.5%119+12.5%120.
+Обучения, CV и поиска весов нет. Старые rolling adapter/training inference не изменены.
+Авторский voting закреплён PhysioEx66b24320:offset0..19, только полные окна,
+logits всех позиций усредняются по фактическому числу голосов, затем softmax.
+Forward/accumulation float32 без autocast; соответствие авторскому циклу проверено.
+Сегменты короче20 автор пропускает. Для них явно сохраняется native-short rolling
+fallback с official vote_count0; все ID остаются. В full val6 таких эпох, test11.
+Основные метрики/CSV охватывают все ID; отдельно сохраняются covered-only метрики,
+counts/fallback mask и mean_logits. Не выдавать fallback за официальный voting.
+Voting и paired rolling получаются из одних CNN features и тех же LSTM окон.
+Для full сверяется воспроизведение старых041/082/085 probabilities; smoke отличается
+граничным preprocessing из-за prefix-селекции и используется только для структуры.
+Сравнения на val — со041/082/085/053/099/113, по классам/людям, исправленным и новым
+ошибкам, истинным переходам N1/N2 и N2/N3. Test labels не читаются.
+Frozen refit checkpoints082/085 строго восстанавливаются из best.pt с проверкой
+SHA, contract, refit epoch и trainable manifest. Original041/082 CNN реально
+идентичны,085 отличается. Кэш2048 CNN features учитывает параметры И buffers,
+данные, IDs и preprocessing; signals один раз на запись, CNN256 и LSTM512 наGPU.
+Предыдущие contextual128/AnySleep6 embeddings и106-фичи для voting не применимы.
+Новый Input bundle — artefacts/cachepacks/sleep-edf-voting-inputs.zip (26.5MiB):
+официальные Tiny assets, full-refit best082/085 и готовые val/test references.
+Внешние скачивания весов не нужны. Порядок:prepare smoke -> prepare full -> all.
+prepare строит только два frozen CNN backbone по val/test; модели идут двумя GPU
+очередями, после barrier121–123 читают готовые probabilities. PARALLEL_DEVICES=[]
+включает последовательный режим. CPU-потоки делятся между очередями; Stop прежний.
+ZIP результатов накопительный, с одним общим source snapshot. Отдельный CNN ZIP
+сливает writable/read-only voting caches, исключает signals; может быть около1.8GB
+до сжатия полного val/test. Новые веса не создаются и не экспортируются.
+Resume:RESUME_ROOT для результатов; voting CNN_INPUTS обнаруживается вInput и
+читается без копирования, RESUME_CACHE_ROOT необязателен. Следующий ID —124.
+118–123 пока подготовлены: короткие локальные smoke не являются полными экспериментами
+и в experiments.csv не добавляются. Полные прогоны выполняет пользователь наKaggle.
 Другие семейства моделей остаются каркасом. Проверенные команды и ограничения
 смотри в README. Полную серию выполняем на Kaggle; smoke не является экспериментом
 качества и не записывается в experiments.csv.
