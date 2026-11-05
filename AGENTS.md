@@ -116,7 +116,7 @@ artefacts/imports/pretrained_expansion. Анализ качества не вы�
 Пользователь выбрал только B из временных ансамблей A–M. Он сохранён как
 099_pretrained: 50%019 + 25%082 + 25%085, по готовым val/test probabilities,
 без нового обучения. Это offline_saved_probability_ensemble, отдельный от CLI
-новой серии. Временная папка A–M удалена. Следующий свободный ID — 100.
+новой серии. Временная папка A–M удалена.
 CLI — python -m src.expansion_run; тот же 05_pretrained.ipynb. По умолчанию frozen,
 SMOKE_ONLY=True, ALLOW_TRAINING=False. Любые обучаемые варианты требуют --allow-training.
 Три общих GroupKFold по subject_id внутри train; refit после выбора только по train.
@@ -136,6 +136,47 @@ SleepGPT использует опубликованный large encoder, EDF ch
 STFT и новую обучаемую Linear(1536,5); partial размораживает blocks10/11 + norm.
 Компактный ZIP исключает сигналы, embeddings и веса; best/last и classifier.joblib
 экспортируются отдельно. Подробности — docs/expansion_runbook.md.
+Подготовлена новая серия 100–117; это конфигурации, а не завершённые эксперименты.
+CLI — python -m src.refinement_run; launcher — тот же 05_pretrained.ipynb.
+100–104 — residual softmax gates с prior019/082/085=0.5/0.25/0.25 и CE+KL;
+105 — официальный wav2sleep-eog с одним horizontalEOG в слоте EOG-L, без EOG-R.
+Авторская архитектура поддерживает subset сигналов; горизонтальное дифференциальное
+отведение отличается от авторского EOG-L, это явное ограничение рецепта.
+106–110 — residual TCN/BiGRU на frozen Tiny128+AnySleep6, контекст20/100;
+110 добавляет center-driven loss соседей. Это downstream модели, не воспроизведение
+архитектур SleepLT/CSPT-SleepNet.111–116 — шесть фиксированных итоговых смесей.
+BestGate/BestTemporal выбираются только по train OOF.117 — последний дорогой full
+TinyFT с покрытием20-эпоховых tiles, sleep/random supplements и равным суммарным
+весом людей в CE. Для сегментов короче20 полные обучающие окна не создаются.
+Порядок групп: prepare -> gates -> wav2sleep -> temporal -> blends -> wav_blend ->
+tiny -> tiny_blends. Следующий свободный ID — 118. Самостоятельно полную серию не запускать.
+Для корректной downstream CV простого повторного разбиения готового082/085 OOF
+недостаточно: возникает утечка через обучение экспертов на других folds.
+prepare один раз строит inner GroupKFold2 внутри каждого из3 outer folds:
+12 внутренних fits082/085 с заранее фиксированными5 эпохами, без outer held labels.
+Outer held вероятности исходных082/085 переиспользуются; итоговые heads обучаются
+на исходных train OOF, а val/test используют исходные full-train refit вероятности.
+Уменьшенное число людей в inner source models относительно final experts —
+ограничение nested stacking; исходный author-pretraining overlap остаётся отдельным.
+Smoke структурный, не независимая оценка качества. Отдельные smoke/full кэши.
+Старые train019, OOF082/085, val/test и106 признаки упакованы без нового инференса
+в artefacts/cachepacks/sleep-edf-refinement-inputs.zip. Старые результаты сохранены.
+Embeddings прежние ZIP не содержат; при наличии отдельного кэша проверяем ID,
+данные, checkpoint assets и слой. Иначе извлекаем один раз с увеличенными GPU batches.
+Vectorized GPU window gathers для heads; memory-mapped pool и cached metadata
+для Tiny исключают повторное распаковывание NPZ и hash/header чтения в каждом batch.
+Новые Tiny CNN/LSTM batches256; AnySleep до4 одинаковых по длине исходных блоков;
+117 оценивает GPU-память одним backward на16 окнах без обновления параметров,
+выбирает физический batch до128, сохраняет размер и уменьшает его при CUDA OOM.
+Один процесс использует одну GPU. После prepare группы gates/temporal по умолчанию
+делятся на две очереди cuda:0/cuda:1 (PARALLEL_DEVICES=[] отключает параллелизм),
+CPU-потоки делятся между процессами. Для каждого процесса отдельный failure-report
+и один display_id; Stop завершает оба дерева uv-процессов. Остальные группы последовательные.
+Общий индикатор показывает номер конфигурации,
+этап/число этапов, fold/refit, эпоху/batch, время конфигурации и этапа; refresh7секунд.
+Результаты, best/last веса и reusable embeddings/nested/folds экспортируются тремя
+ZIP; сигналы/pools не входят в переносимый кэш. Resume требует соответствующих
+RESUME_ROOT, RESUME_TRAINED_ROOT и RESUME_CACHE_ROOT и той же версии кода.
 Другие семейства моделей остаются каркасом. Проверенные команды и ограничения
 смотри в README. Полную серию выполняем на Kaggle; smoke не является экспериментом
 качества и не записывается в experiments.csv.
