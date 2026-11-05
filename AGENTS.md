@@ -136,7 +136,15 @@ SleepGPT использует опубликованный large encoder, EDF ch
 STFT и новую обучаемую Linear(1536,5); partial размораживает blocks10/11 + norm.
 Компактный ZIP исключает сигналы, embeddings и веса; best/last и classifier.joblib
 экспортируются отдельно. Подробности — docs/expansion_runbook.md.
-Подготовлена новая серия 100–117; это конфигурации, а не завершённые эксперименты.
+Серия 100–117 выполнена пользователем на Kaggle и импортирована:18 полных прогонов
+и18 smoke. В experiments.csv добавлены18 complete-строк с validation-метриками;
+прежние93 строки сохранены. Вероятности, ID, submissions, OOF, наличие best/last
+и целостность архивов проверены без загрузки моделей и анализа качества.
+Результаты — artefacts/<ID>, smoke — artefacts/smoke/<ID>, веса —
+artefacts/trained-checkpoints/{full,smoke}, включая shared nested экспертов.
+Готовые embeddings, folds и nested OOF — artefacts/cache/refinement/{full,smoke}.
+Оригинальные триZIP — artefacts/archives/pretrained; аудит и копии журнала —
+artefacts/imports/pretrained_refinement/20261105T181752Z. Checkpoints не изменялись.
 CLI — python -m src.refinement_run; launcher — тот же 05_pretrained.ipynb.
 100–104 — residual softmax gates с prior019/082/085=0.5/0.25/0.25 и CE+KL;
 105 — официальный wav2sleep-eog с одним horizontalEOG в слоте EOG-L, без EOG-R.
