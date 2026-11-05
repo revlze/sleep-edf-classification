@@ -1,0 +1,65 @@
+# Hypothesis: PhysioEx L20 logit voting on frozen 082_pretrained
+experiment_id: 119_pretrained
+seed: 42
+summary: PhysioEx L20 logit voting on frozen 082_pretrained
+group: models
+data:
+  root: data/raw
+  version: full_psg_v1
+  sampling_rate: 100
+  epoch_seconds: 30
+  units: microvolts
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+model:
+  kind: tiny_voting
+  source: 082_pretrained
+  channel: EEG Fpz-Cz
+  checkpoint: same original/refit best as source experiment; no training
+  architecture_source_license: MIT; inherited pinned PhysioEx source
+training:
+  enabled: false
+preprocessing:
+  recipe: unchanged Tiny041 bandpass0.3-40Hz order5, 100Hz, microvolts; per continuous
+    record segment
+  boundary: no windows/filtering across record boundaries or missing epoch_index
+inference:
+  length: 20
+  cnn_batch: 256
+  window_batch: 512
+  precision: float32 forward and accumulation; no autocast
+  voting: author offset0..19 complete windows; sum all-position logits, divide by
+    actual vote_counts, then softmax
+  short_segments: author skips N<20; retain paired native short rolling with official
+    vote_count0 and explicit fallback mask
+  rolling: also reconstruct unchanged rolling outputs from the same CNN features and
+    LSTM windows
+  cnn_cache: actual backbone parameters+buffers hash; original041 and classifier-only082
+    share when identical
+  author_revision: 66b24320aa39bc635e304b0891eff41131ca54a5
+  author_trainer_sha256: 22b3113e2f1a2f08810a27b8de335fb3975077412559cc94d5f97a63eb19ceab
+  author_source: https://github.com/guidogagl/physioex/blob/66b24320aa39bc635e304b0891eff41131ca54a5/physioex/train/trainer.py
+evaluation:
+  protocol: frozen provided val -> unlabelled test; no fitting or weight search
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  references:
+  - 041_pretrained
+  - 082_pretrained
+  - 085_pretrained
+  - 053_pretrained
+  - 099_pretrained
+  - 113_pretrained
+  primary_reference: 082_pretrained
+  metrics: full identical epoch IDs; separate exact-voting-covered subset; transitions/N1-N2/N2-N3
+    and subjects
+  limitation: official validation reused; author pretraining overlap unchanged
+paths:
+  artefacts: artefacts/119_pretrained
+  submission: submissions/119_pretrained.csv
