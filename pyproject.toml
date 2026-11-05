@@ -58,3 +58,6 @@ select = ["E4", "E7", "E9", "F", "I", "UP"]
 "src/models/expansion_official.py" = "py312"
 "src/models/sleepgpt.py" = "py312"
 "src/training/expansion.py" = "py312"
+"src/refinement_*.py" = "py312"
+"src/training/refinement.py" = "py312"
+"src/models/wav2sleep.py" = "py312"
