@@ -1,0 +1,37 @@
+# Hypothesis: retain candidate B, a fixed blend of AnySleep019 and two fine-tuned TinySleepNet models.
+experiment_id: 099_pretrained
+seed: 42
+summary: 'Candidate B: 50% AnySleep019 + 25% Tiny082 classifier-only + 25% Tiny085 sqrt-weight full FT'
+mode: offline_saved_probability_ensemble
+data:
+  version: full_psg_v1
+  root: data/raw
+model:
+  kind: saved_probability_ensemble
+  members:
+    - experiment_id: 019_pretrained
+      val: artefacts/019_pretrained/val_predictions.npz
+      test: artefacts/019_pretrained/test_predictions.npz
+    - experiment_id: 082_pretrained
+      val: artefacts/082_pretrained/val_predictions.npz
+      test: artefacts/082_pretrained/test_predictions.npz
+    - experiment_id: 085_pretrained
+      val: artefacts/085_pretrained/val_predictions.npz
+      test: artefacts/085_pretrained/test_predictions.npz
+  weights: [0.5, 0.25, 0.25]
+  class_order: [W, N1, N2, N3, REM]
+preprocessing:
+  recipe: align stored probabilities by epoch ID, compute the weighted mean, normalize each row
+  precision: float64
+training:
+  enabled: false
+inference:
+  source: existing full val/test predictions only; no model forward or training
+  labels: argmax in fixed class order
+evaluation:
+  protocol: provided_val_then_unlabelled_test
+  selection: candidate B selected by user from the temporary A-M ensemble list
+  limitation: provided validation has been reused; no independent final estimate is claimed
+paths:
+  artefacts: artefacts/099_pretrained
+  submission: submissions/099_pretrained.csv
