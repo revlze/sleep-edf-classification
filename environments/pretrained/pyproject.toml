@@ -17,6 +17,8 @@ dependencies = [
     "gdown==5.2.0",
     "lightgbm==4.6.0",
     "einops==0.8.2",
+    "yasa==0.7.0",
+    "pandas==2.2.3",
 ]
 
 [dependency-groups]
