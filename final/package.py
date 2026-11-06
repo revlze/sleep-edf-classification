@@ -41,7 +41,7 @@ def bundle(target):
     except (OSError, subprocess.CalledProcessError):
         revision, dirty = None, None
     manifest = {
-        "kind": "sleep_edf_final_v1",
+        "kind": "sleep_edf_final_v2",
         "solutions": ["113_pretrained", "099_pretrained"],
         "source_commit": revision,
         "source_dirty": dirty,
@@ -85,7 +85,7 @@ def main():
     parser.add_argument("--results-root", type=Path)
     args = parser.parse_args()
     if args.action == "bundle":
-        bundle(args.output or FINAL / "bundles/sleep-edf-final-inputs.zip")
+        bundle(args.output or FINAL / "bundles/sleep-edf-final-offline-inputs.zip")
     else:
         if args.output is None or args.results_root is None:
             parser.error("results needs --output and --results-root")

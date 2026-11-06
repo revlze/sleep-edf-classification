@@ -1,0 +1,19 @@
+{
+  "network_connect_errno": 101,
+  "namespace": "net:[4026532227]",
+  "offline_cold_restoration": true,
+  "real_checkpoints_loaded": true,
+  "inference_epochs": 4,
+  "both_csv_created": true,
+  "python_versions": {
+    "inference": "3.12.12",
+    "features": "3.14.2"
+  },
+  "scope": "Linux CPU bootstrap/smoke only; full T4 id,label verification remains pending",
+  "runtime_bundle": {
+    "filename": "sleep-edf-final-runtime-linux.zip",
+    "bytes": 3550325711,
+    "sha256": "9b5e1d956dba388c29bf68ac90cbab8a8a9c0584c2518973100b851746b90c8b"
+  },
+  "validation": "Cold restore of both Python environments from the final ZIP with Linux network namespace disabled, then real four-epoch CPU inference. Full Kaggle T4 inference and two-hour budget remain unverified."
+}
