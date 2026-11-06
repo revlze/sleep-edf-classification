@@ -227,7 +227,7 @@ Resume:RESUME_ROOT для результатов; voting CNN_INPUTS обнару
 читается без копирования, RESUME_CACHE_ROOT необязателен. Следующий ID —147.
 Smoke не записывается в experiments.csv; при импорте voting полные метрики
 сохранялись только для всех43206 эпох val, отдельно от covered-only оценки.
-Подготовлена, но ещё НЕ выполнена полная серия124–146, CLI `python -m src.physiology_run`,
+Серия124–146 выполнена на Kaggle и импортирована:23 full+23 smoke. CLI `python -m src.physiology_run`,
 launcher тот же05_pretrained.ipynb, та же веткаfeat/pretrained-refinement.
 124/125 — native YASA0.7 EEG+EOG без EMG/демографии, classifierSHA закреплён;
 126–128 — frozen Tiny contextual128 + AnySleep pre-classifier6, MLP CE/SupCon/hard negatives;
@@ -237,7 +237,7 @@ launcher тот же05_pretrained.ipynb, та же веткаfeat/pretrained-ref
 134/135 — bounded class-wise residual113 без/с event80;136–145 — фиксированные75/25 смеси;
 146 — .5*113+.25*BestContrastive+.25*BestCalib по train OOF. F1/F2/F3 переиспользуют
 существующие IDs136–145 черезfamily_selection.json, новых дубликатов смесей нет.
-Полные метрики124–146 в experiments.csv не добавлены; локально только структурные проверки.
+В experiments.csv добавлены23 complete-строки по полной validation; прежние117 строк сохранены, всего140. Smoke в журнал не добавлен.
 Старые predictions/OOF/embeddings134/106 и6 nested Tiny experts упакованы без нового
 инференса в artefacts/cachepacks/sleep-edf-physiology-inputs.zip (~409MiB).
 Новый frozen embedding reader проверяет ID/данные/слой/assets/SHA и запрещает extraction fallback.
@@ -264,6 +264,22 @@ residual4096, AMP, GPU STFT, mmap signals, OOM автоматом уменьша
 roleOOF без signals/pools), trained (best/last/LightGBM). Resume требует всех3 соответствующих
 корней и той же версии кода. Изменён только isolated pretrained env: YASA0.7.0, pandas2.2.3
 (совместимость SciPy1.15); корневое окружение и завершённые recipes не менялись.
+
+Импорт124–146: результаты artefacts/<ID>, smoke artefacts/smoke/<ID>,23 CSV в submissions/.
+Веса — artefacts/trained-checkpoints/{full,smoke}/<ID>, включая6 role_stack heads в каждомрежиме;
+переносимый кэш — artefacts/cache/physiology/{full,smoke,folds}. Проверены CRC/SHA архивов,
+val/test IDs и CSV, арифметика метрик, OOF/folds, смеси/селекторы, полнота event/YASA/role
+кэша и наличие best/last/LightGBM с доступнымиSHA. Модели не загружались, обучение не запускалось.
+Во всех23 full были только missing-experiments.csv ошибки уже после сохранения численных
+результатов. Журнал и общие CSV восстановлены; оригинальные errorJSON сохранены отдельно
+в аудите. Отложенные этим сбоем парные сравнения восстановлены из готовых вероятностей
+штатной функцией, без нового inference и без интерпретации качества моделей.
+Исходные3 ZIP неизменными перемещены в artefacts/archives/pretrained. Аудит и source snapshot:
+artefacts/imports/pretrained_physiology/20261106T173329Z. Из снимка вZIP фильтром*.lock был
+исключён environments/pretrained/uv.lock: он восстановлен из заявленного9fbaf0c с точнымSHA.
+Численные данные, параметры и checkpoint-файлы при импорте не изменялись.
+В fusion_prepare обнаружено многократное чтение z['probabilities'] внутри цикла по строкам;
+этот известный bottleneck пока не исправлялся при импорте. Полную завершённую серию не повторять.
 
 Исправлена инициализация experiments.csv в новом OUTPUT_ROOT: smoke не пишет журнал,
 а прежний full падал после сохранения metrics/probabilities/submission на отсутствии CSV.
