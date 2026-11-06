@@ -1,0 +1,42 @@
+{
+  "status": "awaiting_full_kaggle_execution",
+  "notebook": {
+    "url": null,
+    "version": null
+  },
+  "inputs": [
+    {
+      "owner": "levshaazz",
+      "slug": "sleep-edf-full-psg-course-data",
+      "version": 1
+    },
+    {
+      "owner": null,
+      "slug": null,
+      "version": null,
+      "role": "frozen final code and weights bundle"
+    }
+  ],
+  "solutions": {
+    "113": {
+      "primary": true,
+      "submission_id": null,
+      "reference_csv": "submissions/submission.csv",
+      "reference_sha256": "3f7b7a93128b68a4b5b0595097fbfa2a13d31f36072a3cc38e4c8000d26ebccb"
+    },
+    "099": {
+      "primary": false,
+      "submission_id": null,
+      "reference_csv": "submissions/submission_2.csv",
+      "reference_sha256": "d5959b95a33835ce1e685ca271014ccd276362d0df6ce25b214560c2267dc533"
+    }
+  },
+  "one_notebook_for_two_solutions": "agreed with instructor by user",
+  "required_before_submission": [
+    "executed Kaggle notebook with outputs and exact saved version",
+    "PDF of executed notebook",
+    "full run EXACT_MATCH report for both113/099",
+    "Kaggle submission IDs",
+    "exact version of final code/weights Input; teacher access"
+  ]
+}

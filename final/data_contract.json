@@ -1,0 +1,38 @@
+{
+  "revision": "full_psg_v1",
+  "manifest_sha256": "d95e2d128c64339ca63e10b17f2619f2cfee63556aca9ca7d17a241c203b69c2",
+  "sample_sha256": "c1cae680ff5a59169196f2b0f97abf03368a53448759d80a29c2eb3852685666",
+  "files": {
+    "epochs/test/test_001.npz": "479ff2e7dfd2d1c28e473165639969be63458eb28c10fbcae72d945de0b18cf1",
+    "epochs/test/test_002.npz": "24439352c82ce6240a36492890dc800d70f58932d40c5f25f2ac79709322dbe9",
+    "epochs/test/test_003.npz": "a65d4d2517d90f56f5c0fe427fd49b084bdcd711b809257a370f4428705c2919",
+    "epochs/test/test_004.npz": "80eb07d6891b00904c46cdba883700788147cee6152cc1dc142d65764289b8bc",
+    "epochs/test/test_005.npz": "4aa42214e99c5a5bd7e408ad13ade7db99f940c4e0933958d0de828e9581b497",
+    "epochs/test/test_006.npz": "f849ab36241b097a70f86d3a7c6b361447e800ae3fb4b3b2960a13d471b1560f",
+    "epochs/test/test_007.npz": "73bb004d3c76d3ce28185a75cb088ed7c21d53c5d0116b5837e5bb7725fe6c7c",
+    "epochs/test/test_008.npz": "958419f5fcde53ebf10d6f23a8420c75ca42d35a32cb1d3558c5f661e480fb8f",
+    "epochs/test/test_009.npz": "f5832e337cf55da00adfd3c22397042dfadd42169b220e9e43252dddc8cf863d",
+    "epochs/test/test_010.npz": "456e834dab9191f2ca916305393b4eb816da57e51598f2cf43ee90b838d18cd0",
+    "epochs/test/test_011.npz": "bc3d5e8bec01bf5b271b528f19ec942a76dd05c60b60ef50e037dd28203df328",
+    "epochs/test/test_012.npz": "c367706612863f8ee205aa0657410d86a00c07c86ba3bd1055a85a815e4bd838",
+    "epochs/test/test_013.npz": "bd6c239712980a70d30e3f1ec8d0dbe9e4007f77aaba9b846c587bb5adba04bd",
+    "epochs/test/test_014.npz": "b4727c66abf4bed284b4b05342e1c8de5f657c1f51d338c4568bf8a49cff9e33",
+    "epochs/test/test_015.npz": "0cc69488d3434524b7523065194671c7b30c11f6fe054991e7a22aeff5d26873",
+    "epochs/test/test_016.npz": "f4e380b93fc9f3e375288f758b4dbe8cd306d356e20dcbf46552a60e24d993b7",
+    "epochs/test/test_017.npz": "0c6b1ac96af5ef281b84f0fd99ae3f1e730276320863662fd904fbc5853cb214",
+    "epochs/test/test_018.npz": "c21d1dac2a5b3447c6f4263ce8e5c89ee0af32225f61c14fd7450a076e1199b3",
+    "epochs/test/test_019.npz": "205b662e044a51d30c8c494502e040e98a0fd53dacd1e959a515b8e94666088f",
+    "epochs/test/test_020.npz": "d07d41f65d56ec62e59f330a7b9774fef04fc81e22eb3a7c8bcb41d224095075",
+    "epochs/test/test_021.npz": "51e47e3e5b30aea4327f46da60929295a5afa42e3b93fde731e7d1c2b70f2c1e",
+    "epochs/test/test_022.npz": "94423cbb700270fb772c3e8b87ede271cde711a1733a572531fa62be34937826",
+    "epochs/test/test_023.npz": "d27d0b6ae782ae4f8894769e86cbc9fcb26d7d92da7a17f9c96c08a0d1486756",
+    "epochs/test/test_024.npz": "a7eb72e64f18aea29a27eb2396830df80dd50aee1df7997b15e3329d3712aea1"
+  },
+  "source_input": {
+    "owner": "levshaazz",
+    "slug": "sleep-edf-full-psg-course-data",
+    "version": 1,
+    "title": "Sleep-EDF Full PSG Course Data",
+    "metadata_source": "https://www.kaggle.com/api/v1/datasets/view/levshaazz/sleep-edf-full-psg-course-data"
+  }
+}

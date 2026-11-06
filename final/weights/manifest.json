@@ -1,0 +1,77 @@
+{
+  "weights": [
+    {
+      "file": "anysleep-run1.pth",
+      "sha256": "9f305c0f81a58d36092bb88b04832a48f0f4dae940f31486cd2284e9c659483f",
+      "bytes": 12763675,
+      "source": "dslaborg/AnySleep",
+      "revision": "899bfff284f3eb3e7448bc90990f2230757470a2",
+      "license": "MIT"
+    },
+    {
+      "file": "anysleep-run2.pth",
+      "sha256": "dde1e762718787e6705c0169f30cc43be2a7681fba82e83a5a01c11c70987902",
+      "bytes": 12763675,
+      "source": "dslaborg/AnySleep",
+      "revision": "899bfff284f3eb3e7448bc90990f2230757470a2",
+      "license": "MIT"
+    },
+    {
+      "file": "anysleep-run3.pth",
+      "sha256": "ac846afe53ccd9761455b53279a5102cbde92904526cbad6778b3b4ea91581d1",
+      "bytes": 12763675,
+      "source": "dslaborg/AnySleep",
+      "revision": "899bfff284f3eb3e7448bc90990f2230757470a2",
+      "license": "MIT"
+    },
+    {
+      "file": "tinysleepnet.pt",
+      "sha256": "f6cf85b7499c91ed6cb665aa5864ea498a4e0d801288e900a0da9c23d3c5337d",
+      "bytes": 6079233,
+      "source": "4rooms/physioex/tinysleepnet-supratak",
+      "revision": "fc362d1976a203f9bf47cd5072845615d573aae2",
+      "license": "MIT (PhysioEx source; see third-party notices)"
+    },
+    {
+      "file": "082_best.pt",
+      "sha256": "48efeb148d441866837b29b11a33a4af5c21f7ff027ebc4a7987838001befc98",
+      "bytes": 12072,
+      "source": "our full-train refit 082_pretrained",
+      "contract": "ccbe52a5e5a70a80e65dfa28d2caacb26455b16e7e282584800e8ad5a359509c",
+      "seed": 42
+    },
+    {
+      "file": "085_best.pt",
+      "sha256": "23671da12a656885e8f21c6fe86ac61f0e9bf8d7f7a7093af385d7b4f91dc123",
+      "bytes": 6080920,
+      "source": "our full-train refit 085_pretrained",
+      "contract": "70a3c7e416f8049d4b514d862092f0f52319bfac4858a0177bb395550976fcb5",
+      "seed": 42
+    },
+    {
+      "file": "102_best.pt",
+      "sha256": "07d566ebb17ce625f6d6dc572c6c7fdf8bf3e58b065b21fec91567c062e1dd7b",
+      "bytes": 57138,
+      "source": "our full-train refit 102_pretrained",
+      "contract": "974ef937acd616e6e91c65c78d9154764a780d8871f1bae8a23a303087ff77a5",
+      "seed": 42
+    },
+    {
+      "file": "106_best.pt",
+      "sha256": "9ff01f983621012fea484dc5ac81d0f353b8ea4aae2626f7a8f19db402a7cddf",
+      "bytes": 354467,
+      "source": "our full-train refit 106_pretrained",
+      "contract": "b6132fc162f2b68c525b884484583d3436e25910b1fd0e5b6b19d7903de25897",
+      "seed": 42
+    }
+  ],
+  "vendor_files": {
+    "AnySleep-LICENSE.txt": "773ab33afb82b4249e23cc758b37f82bad7e9afeb4bfd7386baa3bf2dc4be9bd",
+    "anysleep_no_hydra.py": "b94a9b62216a663e2923138b42c9439ccfa7b94cc8ca95729e2548c80afe785f",
+    "PhysioEx-LICENSE.txt": "e589f92efe017ed9b69fec6b0f6ca8e9a04cfbc0c7d60f358f0a6561c6776d73",
+    "tinysleepnet-config.json": "765544103d4cf2b0dd50681206296e866c0b47b62eeaf4c54e7e2cf5587b0a19",
+    "tinysleepnet_source.py": "a19fa56baa6aa66f6d2ba35e57ec5e6368bf7076b84b712670b888ce5294a7f5",
+    "__init__.py": "6544b326b52848f499bde99f9229d84717c0bfa6db43cd3d6ee0f772f0c7cc51"
+  },
+  "vendor_hash_semantics": "SHA-256 after CRLF -> LF; weights use exact bytes"
+}

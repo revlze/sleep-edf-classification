@@ -1,0 +1,86 @@
+experiment_id: 113_pretrained
+seed: 42
+training:
+  enabled: false
+class_order:
+- W
+- N1
+- N2
+- N3
+- REM
+inference:
+  anysleep_core: 128
+  anysleep_halo: 64
+  encoder_grid: 16
+  anysleep_batch: 1
+  tiny_cnn_batch: 64
+  tiny_window_batch: 16
+  embedding_tiny_cnn_batch: 256
+  embedding_tiny_window_batch: 256
+  embedding_anysleep_batch: 4
+  precision: float32 backbones; original CUDA float16 autocast for residual heads
+    only
+ensemble:
+  members:
+  - B_from_normalized_experts
+  - '102'
+  - '106'
+  weights:
+  - 0.5
+  - 0.25
+  - 0.25
+checkpoints:
+  tiny_classifier: 082_best.pt
+  tiny_full: 085_best.pt
+reference:
+  csv: submission.csv
+  sha256: 3f7b7a93128b68a4b5b0595097fbfa2a13d31f36072a3cc38e4c8000d26ebccb
+  provenance: selected original research submission; comparison only, never an inference
+    input
+heads:
+  '102':
+    model:
+      kind: gate
+      architecture: mlp
+      hidden: 64
+      features: physio
+      context: 1
+      prior_weights:
+      - 0.5
+      - 0.25
+      - 0.25
+      zero_initialized_head: true
+      regularization: KL(gate || prior)
+      experts:
+      - '019'
+      - '082'
+      - '085'
+    batch_size: 4096
+    checkpoint: 102_best.pt
+  '106':
+    model:
+      kind: temporal_residual
+      architecture: tcn
+      context: 20
+      hidden: 64
+      features: embeddings
+      zero_initialized_head: true
+      center_supervision: false
+      center_loss_weight: 1.0
+      neighbor_loss_weight: 0.0
+      references:
+      - https://www.mdpi.com/2076-3417/16/9/4092
+      - https://www.mdpi.com/2076-3425/16/10/1108
+      implementation: small downstream residual model inspired by long-context/center
+        supervision; no claim of reproducing those papers
+    batch_size: 512
+    checkpoint: 106_best.pt
+feature_spec:
+  epsilon: 1.0e-12
+  welch_nperseg: 500
+  welch_noverlap: 250
+  welch_window: hamming
+  welch_average: median
+  higuchi_kmax: 10
+  permutation_order: 3
+  batch_size: 32
