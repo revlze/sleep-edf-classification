@@ -1,0 +1,234 @@
+{
+  "packages": {
+    "sleepyco": {
+      "revision": "8ebfb13148b224d2156b2b3f6315f3871200fd7f",
+      "repository": "gist-ailab/SleePyCo",
+      "license": "MIT",
+      "files": {
+        "models/sleepyco.py": {
+          "url": "https://raw.githubusercontent.com/gist-ailab/SleePyCo/8ebfb13148b224d2156b2b3f6315f3871200fd7f/models/sleepyco.py",
+          "sha256": "3bfe4d0d1514d1213252cb32c8b28adf03ba61041bb75e9d02d5f019ed994f94"
+        },
+        "models/classifiers.py": {
+          "url": "https://raw.githubusercontent.com/gist-ailab/SleePyCo/8ebfb13148b224d2156b2b3f6315f3871200fd7f/models/classifiers.py",
+          "sha256": "aa2ce603dce11ead0cda570510d5bf15887f92b0dc1f94be6e0929d3b9253acc"
+        },
+        "models/main_model.py": {
+          "url": "https://raw.githubusercontent.com/gist-ailab/SleePyCo/8ebfb13148b224d2156b2b3f6315f3871200fd7f/models/main_model.py",
+          "sha256": "9cebe6ff6669e375498115e8a22e89aaae4778e009696ddb7c67b47953724474"
+        },
+        "configs/SleePyCo-Transformer_SL-10_numScales-3_Sleep-EDF-2018_freezefinetune.json": {
+          "url": "https://raw.githubusercontent.com/gist-ailab/SleePyCo/8ebfb13148b224d2156b2b3f6315f3871200fd7f/configs/SleePyCo-Transformer_SL-10_numScales-3_Sleep-EDF-2018_freezefinetune.json",
+          "sha256": "8f9a2c3fdf4436b3c9cf53832364cbde14b883fdcb58feaef2b975767a509e75"
+        },
+        "configs/SleePyCo-Transformer_SL-10_numScales-3_SHHS_freezefinetune.json": {
+          "url": "https://raw.githubusercontent.com/gist-ailab/SleePyCo/8ebfb13148b224d2156b2b3f6315f3871200fd7f/configs/SleePyCo-Transformer_SL-10_numScales-3_SHHS_freezefinetune.json",
+          "sha256": "ef5f3ab94799e2bf129cf6a3738f2c74e5b88f0a56109dbc42c8b97db0f2ad3f"
+        }
+      }
+    },
+    "robust": {
+      "revision": "c8ff3f6f857299eb2bf2e9400483084d5ecd4106",
+      "repository": "Dreem-Organization/RobustSleepNet",
+      "license": "MIT",
+      "files": {
+        "robust_sleep_net/models/__init__.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/__init__.py",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "robust_sleep_net/models/modulo_net/net.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/net.py",
+          "sha256": "29d3d8a46e2fb124cb705074d483a02f5d12daafe705a8e3b523897749857187"
+        },
+        "robust_sleep_net/models/modulo_net/normalization.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/normalization.py",
+          "sha256": "f8861aa4e977e0c1e515bda5e25d8963462b67a6a6a2e326daa7c8f30d04c5c4"
+        },
+        "robust_sleep_net/models/modulo_net/__init__.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/__init__.py",
+          "sha256": "84b277d6489bc4e5960b584ba4afc25faf6f6c713006564540452fcf76a7d395"
+        },
+        "robust_sleep_net/models/modulo_net/epochs_encoder/epoch_encoder.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/epochs_encoder/epoch_encoder.py",
+          "sha256": "a00e6d720521133b1bafa0de2a2b8392c5698197ec4221b528ce1e7aa62531ea"
+        },
+        "robust_sleep_net/models/modulo_net/epochs_encoder/robust_encoder.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/epochs_encoder/robust_encoder.py",
+          "sha256": "d9716a28036d8f45fa54e25f39b479073a9a4e1bc6325a18f0ddb158d1622811"
+        },
+        "robust_sleep_net/models/modulo_net/epochs_encoder/__init__.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/epochs_encoder/__init__.py",
+          "sha256": "a58e3649c2cfef7b25bf8dd07b1ca8d20edfa64a24341023e51a391cffc383fa"
+        },
+        "robust_sleep_net/models/modulo_net/epochs_reduction/attention_reducer.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/epochs_reduction/attention_reducer.py",
+          "sha256": "61872bcb7cb41cff81b7b282ada733307e432ea70c1207cdec681c7501bed69b"
+        },
+        "robust_sleep_net/models/modulo_net/epochs_reduction/attention_reducer_with_reduction.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/epochs_reduction/attention_reducer_with_reduction.py",
+          "sha256": "2a56fc708d4afb3f9566a588ab30b8074a9b4f07a8a4f4cbf9735ea8992bebd4"
+        },
+        "robust_sleep_net/models/modulo_net/epochs_reduction/pool_reducer.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/epochs_reduction/pool_reducer.py",
+          "sha256": "9dc2ea7ee99e07a37ad87a5b0b0e5701f441600ee64d671a67494f314478048c"
+        },
+        "robust_sleep_net/models/modulo_net/epochs_reduction/__init__.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/epochs_reduction/__init__.py",
+          "sha256": "d65859307e6ec8b847ea97b639f97a60c9eedf0cfc41450ed6cba523f2728f76"
+        },
+        "robust_sleep_net/models/modulo_net/features_encoder/fully_connected.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/features_encoder/fully_connected.py",
+          "sha256": "7f677fdb7cfc294c55aaff2d949ea306d1323e6b0e946d37d1db9fbb66b1ecd8"
+        },
+        "robust_sleep_net/models/modulo_net/features_encoder/__init__.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/features_encoder/__init__.py",
+          "sha256": "9fb195d228914cc3f29f99bceb6e4c721b979d332afe9137ae32bc39074b3863"
+        },
+        "robust_sleep_net/models/modulo_net/modules/attention.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/modules/attention.py",
+          "sha256": "53882a486942711c25bbe34b30625c3b1cc74bcf12c9e7cdad8ad7787866573d"
+        },
+        "robust_sleep_net/models/modulo_net/modules/channels_attention.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/modules/channels_attention.py",
+          "sha256": "7459dafab4a656461642d61c3182821949113224f95a045d2d344af11d0b93c3"
+        },
+        "robust_sleep_net/models/modulo_net/modules/__init__.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/modules/__init__.py",
+          "sha256": "9de53b136e9088fee6f4de561f64b455c4c3868fe098ed14695b4eadc883b93f"
+        },
+        "robust_sleep_net/models/modulo_net/sequence_encoder/gru_sequence_encoder.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/sequence_encoder/gru_sequence_encoder.py",
+          "sha256": "bf3d0284008dabd74efde296427b81e645f4cd5f91edcd8f9ec21248f1036f03"
+        },
+        "robust_sleep_net/models/modulo_net/sequence_encoder/residual_sequence_encoder.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/sequence_encoder/residual_sequence_encoder.py",
+          "sha256": "0a18a291e466bb12f5799ff0d585a43c47a754e53e8dfcab6b97caa3b695ee61"
+        },
+        "robust_sleep_net/models/modulo_net/sequence_encoder/__init__.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/models/modulo_net/sequence_encoder/__init__.py",
+          "sha256": "943808d76c4ec86bd8b3463e42763a949471fe9bd99f36ad3a339637e5fdf5c4"
+        },
+        "robust_sleep_net/__init__.py": {
+          "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/robust_sleep_net/__init__.py",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    "physioex": {
+      "revision": "66b24320aa39bc635e304b0891eff41131ca54a5",
+      "repository": "guidogagl/physioex",
+      "license": "MIT",
+      "files": {
+        "physioex/models/seqsleepnet.py": {
+          "url": "https://raw.githubusercontent.com/guidogagl/physioex/66b24320aa39bc635e304b0891eff41131ca54a5/physioex/models/seqsleepnet.py",
+          "sha256": "75a215cf0f4c5126ab12ddef5d4f538022e4f65d7e26b6ea9540507974b857fc"
+        },
+        "physioex/models/lseqsleepnet.py": {
+          "url": "https://raw.githubusercontent.com/guidogagl/physioex/66b24320aa39bc635e304b0891eff41131ca54a5/physioex/models/lseqsleepnet.py",
+          "sha256": "e4f424bf63313176c0bb742d2679ad8f014229ab4552b926039f0c0491d84341"
+        },
+        "physioex/models/sleeptransformer.py": {
+          "url": "https://raw.githubusercontent.com/guidogagl/physioex/66b24320aa39bc635e304b0891eff41131ca54a5/physioex/models/sleeptransformer.py",
+          "sha256": "b3d57cacce3a3adc25a79bcf4f22296790b4eda6a2c1f9d860e6fb2ddf74d79a"
+        }
+      }
+    },
+    "sleepgpt": {
+      "revision": "fcbb2c7a6489b5742ab77d66483661e45a4aadf2",
+      "repository": "LordXX505/SleepGPT",
+      "license": "No license file in official repository; research artifact, verify permission before redistribution",
+      "files": {
+        "main/modules/multiway_transformer.py": {
+          "url": "https://raw.githubusercontent.com/LordXX505/SleepGPT/fcbb2c7a6489b5742ab77d66483661e45a4aadf2/main/modules/multiway_transformer.py",
+          "sha256": "6cdcf870e03868049bebb0c8eb865f956320cde25be767ea30daf12744fd043c"
+        },
+        "main/modules/backbone_pretrain.py": {
+          "url": "https://raw.githubusercontent.com/LordXX505/SleepGPT/fcbb2c7a6489b5742ab77d66483661e45a4aadf2/main/modules/backbone_pretrain.py",
+          "sha256": "38dfb54212cacd3c0c8f51c20f94e4afd2fe2f091705349f7297bfe983c6618e"
+        },
+        "main/transforms/transform.py": {
+          "url": "https://raw.githubusercontent.com/LordXX505/SleepGPT/fcbb2c7a6489b5742ab77d66483661e45a4aadf2/main/transforms/transform.py",
+          "sha256": "8b54689116d74228d62a7f6d075f921f44e14113ecfbf9bec953287a5bd0028e"
+        },
+        "main/datasets/base_dataset.py": {
+          "url": "https://raw.githubusercontent.com/LordXX505/SleepGPT/fcbb2c7a6489b5742ab77d66483661e45a4aadf2/main/datasets/base_dataset.py",
+          "sha256": "2c86f57db6b072bcc80c4cd2f2940980636a2c01d4610c418c4197b25b48c342"
+        },
+        "main/datasets/new_base_dataset.py": {
+          "url": "https://raw.githubusercontent.com/LordXX505/SleepGPT/fcbb2c7a6489b5742ab77d66483661e45a4aadf2/main/datasets/new_base_dataset.py",
+          "sha256": "9ce48e13c0127f9492a01f106a068aae31fe6186c014bc750de3faa5945acd8c"
+        },
+        "main/datasets/EDF_dataset.py": {
+          "url": "https://raw.githubusercontent.com/LordXX505/SleepGPT/fcbb2c7a6489b5742ab77d66483661e45a4aadf2/main/datasets/EDF_dataset.py",
+          "sha256": "f411c6a9ec3c2ef5b8836f8051a580a860a8d5ddc21b13da7e6344a065079464"
+        }
+      }
+    }
+  },
+  "assets": {
+    "seqsleepnet-phan.pt": {
+      "url": "https://huggingface.co/4rooms/physioex/resolve/fc362d1976a203f9bf47cd5072845615d573aae2/seqsleepnet-phan/model.pt",
+      "sha256": "802909f21d1e42a04a89ad04239da09556a6f0ded4c857a5cd013de2867e3dab",
+      "license": "Apache-2.0"
+    },
+    "seqsleepnet-phan-config.json": {
+      "url": "https://huggingface.co/4rooms/physioex/resolve/fc362d1976a203f9bf47cd5072845615d573aae2/seqsleepnet-phan/config.json",
+      "sha256": "0679357754b289e3fe62ebfdb22a7a3cd6f5ff2aa7c9c6b19f2fc7f8ff7d51f2",
+      "license": "Apache-2.0"
+    },
+    "lseqsleepnet-phan.pt": {
+      "url": "https://huggingface.co/4rooms/physioex/resolve/fc362d1976a203f9bf47cd5072845615d573aae2/lseqsleepnet-phan/model.pt",
+      "sha256": "0b273a96c3b118d446af9c3678746ef6dad1852858d2321838da2a009f2a59ad",
+      "license": "Apache-2.0"
+    },
+    "lseqsleepnet-phan-config.json": {
+      "url": "https://huggingface.co/4rooms/physioex/resolve/fc362d1976a203f9bf47cd5072845615d573aae2/lseqsleepnet-phan/config.json",
+      "sha256": "00de54e75ebd59efa23583903dadb52d18a801192c2ea4cab7b2b71cc88b587e",
+      "license": "Apache-2.0"
+    },
+    "sleeptransformer-phan.pt": {
+      "url": "https://huggingface.co/4rooms/physioex/resolve/fc362d1976a203f9bf47cd5072845615d573aae2/sleeptransformer-phan/model.pt",
+      "sha256": "fdf40433e4be967a34572b16b2ac66e3697c896503ae3a3e9cd30d23921ed3c4",
+      "license": "Apache-2.0"
+    },
+    "sleeptransformer-phan-config.json": {
+      "url": "https://huggingface.co/4rooms/physioex/resolve/fc362d1976a203f9bf47cd5072845615d573aae2/sleeptransformer-phan/config.json",
+      "sha256": "9224323871c0511283ff8e125f0309809bad19479dc40ec0cdeda5eb1b65f664",
+      "license": "Apache-2.0"
+    },
+    "sleepyco-edf2018.zip": {
+      "drive_id": "1RdWl9AUMkFlNwUE2qxx3v5XcL3Exs0Pk",
+      "sha256": "7c9bb235f6f3f8ae47b2c665f299b776f4b5f2c7c31edc7d70d80a6fa4b86bb6",
+      "license": "MIT"
+    },
+    "sleepyco-edf2018-fold01.pth": {
+      "archive": "sleepyco-edf2018.zip",
+      "member": "ckpt_fold-01.pth",
+      "sha256": "3804166c4c9ae24e68fe929330296d93eb7d34e5b08fc1b08d2ac61caa6e5e1f",
+      "license": "MIT",
+      "author_fold": 1
+    },
+    "sleepyco-shhs.zip": {
+      "drive_id": "1FwjtO3JLd1Di0yRmz7g4B0niyY0gzQEd",
+      "sha256": "bad27476680c433b1d31d375e42177d461022494e41e7f1a6c520663bbf77259",
+      "license": "MIT"
+    },
+    "sleepyco-shhs-fold01.pth": {
+      "archive": "sleepyco-shhs.zip",
+      "member": "ckpt_fold-01.pth",
+      "sha256": "402ce091662f297e0faf53cb903ed84829eaed68c8599a1706dbdd6aaff1f68c",
+      "license": "MIT",
+      "author_fold": 1
+    },
+    "robust-leave-sleepedf-out.gz": {
+      "url": "https://raw.githubusercontent.com/Dreem-Organization/RobustSleepNet/c8ff3f6f857299eb2bf2e9400483084d5ecd4106/pretrained_model/0dfcee73-055a-4c4d-929c-8fdf630e14f1/best_model.gz",
+      "sha256": "f25df5e1efc3c43ef1d487f03b3430ef691070bb58fca78b560150e23f63fe0a",
+      "license": "MIT"
+    },
+    "sleepgpt.ckpt": {
+      "drive_id": "1aSU60xUDtXhOAaCrkx6lrIxHSO1dVMQc",
+      "sha256": "a30c53422eaea0bdcd6a1064505bc4ab27a4e4c5bbb6f47ba602e2e10021ed83",
+      "license": "No explicit weight license in official README; do not redistribute automatically"
+    }
+  }
+}

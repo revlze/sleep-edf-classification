@@ -35,7 +35,7 @@ from src.series_results import (
     prediction_metrics,
     write_split,
 )
-from src.storage import file_lock
+from src.storage import canonical_fingerprint, file_lock
 from src.training.pretrained import (
     author_groups,
     correction_predict,
@@ -62,9 +62,10 @@ def source_digest() -> str:
         ROOT / "src/models/pretrained_assets.py",
         ROOT / "environments/pretrained/uv.lock",
     ]
-    return hashlib.sha256(
+    digest = hashlib.sha256(
         b"".join(p.read_bytes().replace(b"\r\n", b"\n") for p in files)
     ).hexdigest()
+    return canonical_fingerprint(digest, "pretrained_series")
 
 
 def load_config(path: Path) -> dict:

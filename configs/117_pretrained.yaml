@@ -1,0 +1,66 @@
+# Hypothesis: Full TinySleepNet fine-tuning with record coverage and subject-balanced sleep/random windows
+seed: 42
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  sampling_rate: 100
+  epoch_seconds: 30
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+preprocessing:
+  recipe: official Tiny041 EEG Fpz-Cz BP0.3–40Hz order5;100Hz;microvolts; no learned
+    signal scaler
+  context: past20 real epochs inside contiguous record segment; no gap crossing
+training:
+  enabled: true
+  optimizer: AdamW
+  lr: 1.0e-05
+  weight_decay: 0.001
+  epochs: 12
+  patience: 3
+  batch_size: 16
+  regularization: 0.0
+  center_stride: 1
+  grad_clip: 1.0
+  selection: train-only subject GroupKFold3; median best epoch refit
+  auto_batch: true
+  max_batch_size: 128
+  coverage: stride20 plus last window per contiguous segment; short segments below20
+    cannot form full training windows
+  batch_policy: one16-window GPU backward without updates estimates65% free memory;
+    cap128 windows; halve on real CUDA OOM; save actual batch
+  early_stopping: fixed train-held blocks spread over records; best checkpoint by
+    held macro-F1
+  sample_loss_weights: inverse number of sampled windows per subject, equal total
+    subject contribution
+evaluation:
+  protocol: train subject GroupKFold3 -> full-train refit -> provided val -> unlabelled
+    test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 099_pretrained
+  limitation: official validation reused; author pretraining overlap is separate from
+    downstream subject CV
+experiment_id: 117_pretrained
+summary: Full TinySleepNet fine-tuning with record coverage and subject-balanced sleep/random
+  windows
+group: tiny
+model:
+  kind: coverage_tiny
+  checkpoint: tinysleepnet.pt
+  strategy: full
+  channel: 0
+  batch_norm: published running stats fixed; affine parameters trainable
+  sampling: all contiguous20-epoch tiles + equal-subject50% random/50% sleep-or-transition
+    supplements
+  loss: ordinary multiclass cross-entropy
+paths:
+  artefacts: artefacts/117_pretrained
+  submission: submissions/117_pretrained.csv

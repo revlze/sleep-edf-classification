@@ -1,0 +1,41 @@
+# Hypothesis: Fixed probability mixture [0.75, 0.25] of 053 + seqsleepnet
+experiment_id: 070_pretrained
+seed: 42
+summary: Fixed probability mixture [0.75, 0.25] of 053 + seqsleepnet
+group: ensembles
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  epoch_seconds: 30
+  sampling_rate: 100
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+paths:
+  artefacts: artefacts/070_pretrained
+  submission: submissions/070_pretrained.csv
+model:
+  kind: ensemble
+  members:
+  - baseline: '053'
+  - recipe:
+      name: seqsleepnet
+  weights:
+  - 0.75
+  - 0.25
+preprocessing:
+  recipe: pinned official adapter; contiguous segments only
+  learned_statistics: training fold only; fixed author record preprocessing allowed
+training:
+  enabled: false
+evaluation:
+  protocol: provided val -> unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 053_pretrained

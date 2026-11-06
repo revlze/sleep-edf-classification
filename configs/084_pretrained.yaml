@@ -1,0 +1,51 @@
+# Hypothesis: Tiny041 full: lr=3e-06, class_weight=none, focal_gamma=0
+experiment_id: 084_pretrained
+seed: 42
+summary: 'Tiny041 full: lr=3e-06, class_weight=none, focal_gamma=0'
+group: tiny_finetune
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  epoch_seconds: 30
+  sampling_rate: 100
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+paths:
+  artefacts: artefacts/084_pretrained
+  submission: submissions/084_pretrained.csv
+model:
+  kind: tiny_finetune
+  strategy: full
+  checkpoint: tinysleepnet.pt
+  channel: 0
+  batch_norm: published running statistics frozen; affine trainable in full FT
+preprocessing:
+  recipe: pinned official adapter; contiguous segments only
+  learned_statistics: training fold only; fixed author record preprocessing allowed
+training:
+  enabled: true
+  lr: 3.0e-06
+  weight_decay: 0.001
+  class_weight: none
+  focal_gamma: 0
+  epochs: 5
+  steps_per_epoch: 96
+  batch_size: 4
+  accumulation: 2
+  grad_clip: 1.0
+  patience: 2
+  min_delta: 0.0001
+  early_stop_epochs_per_record: 256
+  refit: median fold best epoch
+evaluation:
+  protocol: train GroupKFold3 -> full-train refit -> provided val -> unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 053_pretrained

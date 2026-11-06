@@ -1,0 +1,37 @@
+# Hypothesis: Frozen original sleepyco_shhs: independent representation source and diversity vs 053
+experiment_id: 059_pretrained
+seed: 42
+summary: 'Frozen original sleepyco_shhs: independent representation source and diversity
+  vs 053'
+group: frozen
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  epoch_seconds: 30
+  sampling_rate: 100
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+paths:
+  artefacts: artefacts/059_pretrained
+  submission: submissions/059_pretrained.csv
+model:
+  kind: official
+  recipe:
+    name: sleepyco_shhs
+preprocessing:
+  recipe: Fpz-Cz physical uV 100Hz, SHHS montage transfer, past10/native prefixes
+  learned_statistics: training fold only; fixed author record preprocessing allowed
+training:
+  enabled: false
+evaluation:
+  protocol: provided val -> unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 053_pretrained

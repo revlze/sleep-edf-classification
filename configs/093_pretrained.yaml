@@ -1,0 +1,51 @@
+# Hypothesis: Binary n1 lgbm; conservative train-OOF soft correction of 053
+experiment_id: 093_pretrained
+seed: 42
+summary: Binary n1 lgbm; conservative train-OOF soft correction of 053
+group: specialists
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  epoch_seconds: 30
+  sampling_rate: 100
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+paths:
+  artefacts: artefacts/093_pretrained
+  submission: submissions/093_pretrained.csv
+model:
+  kind: specialist
+  target: n1
+  classifier: lgbm
+  features:
+  - tiny
+  - physio
+  - probabilities
+  strengths:
+  - 0.0
+  - 0.1
+  - 0.25
+  - 0.5
+  class_weight: balanced
+preprocessing:
+  recipe: pinned official adapter; contiguous segments only
+  learned_statistics: training fold only; fixed author record preprocessing allowed
+training:
+  enabled: true
+evaluation:
+  protocol: train GroupKFold3 -> full-train refit -> provided val -> unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 053_pretrained
+search:
+  trials:
+  - num_leaves: 15
+  - num_leaves: 31
+  selection: pooled train OOF five-class macro-F1 including alpha0; conservative ties

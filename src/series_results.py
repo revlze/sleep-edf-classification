@@ -88,7 +88,14 @@ def write_split(folder: Path, split: str, values: dict, data, provenance: dict):
 
 
 def journal(
-    config_path: Path, config: dict, metrics: dict, folder: Path, project: Path
+    config_path: Path,
+    config: dict,
+    metrics: dict,
+    folder: Path,
+    project: Path,
+    *,
+    status: str = "complete",
+    evaluation_set: str = "provided_val_then_unlabelled_test",
 ):
     validation = metrics["validation"]
     row = {
@@ -97,11 +104,11 @@ def journal(
         "model": config["model"]["kind"],
         "summary": config["summary"],
         "seed": config["seed"],
-        "evaluation_set": "provided_val_then_unlabelled_test",
+        "evaluation_set": evaluation_set,
         "macro_f1": validation["macro_f1"],
         "train_seconds": metrics.get("training_seconds", ""),
         "infer_seconds": metrics["inference_seconds"],
-        "status": "complete",
+        "status": status,
         "artefacts_path": folder.as_posix(),
     }
     row.update(

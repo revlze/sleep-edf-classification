@@ -46,7 +46,10 @@ class Progress:
                 "status": status,
             }
         if os.environ.get("SLEEP_PROGRESS_JSON") == "1":
-            print(PREFIX + json.dumps(state, ensure_ascii=False), flush=True)
+            # Keep the record and newline in one write: print writes them
+            # separately, allowing another thread's output between them.
+            sys.stdout.write(PREFIX + json.dumps(state, ensure_ascii=False) + "\n")
+            sys.stdout.flush()
         else:
             text = (
                 tqdm.format_meter(

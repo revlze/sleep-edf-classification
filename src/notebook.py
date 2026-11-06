@@ -7,9 +7,74 @@ import os
 import signal
 import subprocess
 import sys
+from contextlib import contextmanager
 from pathlib import Path
+from threading import Event, Lock
 
 PREFIX = "__SLEEP_PROGRESS__"
+_processes = set()
+_process_lock = Lock()
+_cancelled = Event()
+
+
+def reset_commands() -> None:
+    """Allow the next batch after a previous parallel notebook interruption."""
+    with _process_lock:
+        if _processes:
+            raise RuntimeError("Notebook commands are still running")
+        _cancelled.clear()
+
+
+def _terminate(process) -> None:
+    if process.poll() is not None:
+        return
+    if os.name == "nt":
+        subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        if os.name == "nt":
+            process.kill()
+        else:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        process.wait()
+
+
+def cancel_commands() -> None:
+    """Stop both GPU processes, including children of uv, on notebook Stop."""
+    with _process_lock:
+        _cancelled.set()
+        processes = list(_processes)
+    for process in processes:
+        _terminate(process)
+
+
+@contextmanager
+def _command_process(*args, **kwargs):
+    with _process_lock:
+        if _cancelled.is_set():
+            raise KeyboardInterrupt("Notebook command batch was cancelled")
+        process = subprocess.Popen(*args, **kwargs)
+        _processes.add(process)
+    try:
+        with process:
+            yield process
+    finally:
+        with _process_lock:
+            _processes.discard(process)
 
 
 class _Output:
@@ -58,10 +123,21 @@ class _Output:
         while "\n" in self.pending:
             line, self.pending = self.pending.split("\n", 1)
             if line.startswith(PREFIX):
-                self.progress(json.loads(line[len(PREFIX) :]))
-            else:
-                sys.stdout.write(line + "\n")
-                sys.stdout.flush()
+                payload = line[len(PREFIX) :]
+                try:
+                    state, end = json.JSONDecoder().raw_decode(payload)
+                except json.JSONDecodeError:
+                    # Mixed stdout/stderr can corrupt a progress record. Keep
+                    # the diagnostic output without interrupting the CLI.
+                    pass
+                else:
+                    self.progress(state)
+                    remainder = payload[end:]
+                    if remainder:
+                        self.pending = remainder + "\n" + self.pending
+                    continue
+            sys.stdout.write(line + "\n")
+            sys.stdout.flush()
         if final and self.pending:
             sys.stdout.write(self.pending)
             sys.stdout.flush()
@@ -75,10 +151,13 @@ def run_command(command: list[str], *, cwd: Path, env: dict | None = None) -> No
         "PYTHONUNBUFFERED": "1",
         "PYTHONIOENCODING": "utf-8",
         "SLEEP_PROGRESS_JSON": "1",
+        # CLI uses a separate environment without the notebook's inline backend.
+        # Set this only for the child; leave plots in the kernel unchanged.
+        "MPLBACKEND": "Agg",
     }
     if env:
         environment.update(env)
-    with subprocess.Popen(
+    with _command_process(
         command,
         cwd=cwd,
         env=environment,
@@ -96,29 +175,7 @@ def run_command(command: list[str], *, cwd: Path, env: dict | None = None) -> No
             code = process.wait()
         except BaseException:
             # uv is a launcher: stop its training child as well.
-            if os.name == "nt":
-                subprocess.run(
-                    ["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    check=False,
-                )
-            else:
-                try:
-                    os.killpg(process.pid, signal.SIGTERM)
-                except ProcessLookupError:
-                    pass
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                if os.name == "nt":
-                    process.kill()
-                else:
-                    try:
-                        os.killpg(process.pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-                process.wait()
+            _terminate(process)
             raise
     if code:
         raise subprocess.CalledProcessError(code, command)

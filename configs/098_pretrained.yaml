@@ -1,0 +1,42 @@
+# Hypothesis: Train-level selection of two new frozen sources, fixed .5/.25/.25 mixture with 053
+experiment_id: 098_pretrained
+seed: 42
+summary: Train-level selection of two new frozen sources, fixed .5/.25/.25 mixture
+  with 053
+group: adaptive
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  epoch_seconds: 30
+  sampling_rate: 100
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+paths:
+  artefacts: artefacts/098_pretrained
+  submission: submissions/098_pretrained.csv
+model:
+  kind: adaptive_ensemble
+  candidates:
+  - name: sleepyco_edf2018
+  - name: sleepyco_shhs
+  - name: seqsleepnet
+  - name: lseqsleepnet
+  - name: sleeptransformer
+  - name: robust
+preprocessing:
+  recipe: pinned official adapter; contiguous segments only
+  learned_statistics: training fold only; fixed author record preprocessing allowed
+training:
+  enabled: false
+evaluation:
+  protocol: provided val -> unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 053_pretrained

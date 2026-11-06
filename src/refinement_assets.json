@@ -1,0 +1,32 @@
+{
+  "repository": "https://github.com/joncarter1/wav2sleep",
+  "source_revision": "278e30463c8149c4e6899b8784da492fec695bd9",
+  "checkpoint_revision": "ef16a45b532f74fc0dfb78a3beb6a39cd746b24e",
+  "license": "MIT",
+  "files": {
+    "settings.py": {
+      "url": "https://raw.githubusercontent.com/joncarter1/wav2sleep/278e30463c8149c4e6899b8784da492fec695bd9/src/wav2sleep/settings.py",
+      "sha256": "69c6e4d78a283a6bcf066b9c877ea2a13411be857a48d38042de434e459b28e6"
+    },
+    "models/utils.py": {
+      "url": "https://raw.githubusercontent.com/joncarter1/wav2sleep/278e30463c8149c4e6899b8784da492fec695bd9/src/wav2sleep/models/utils.py",
+      "sha256": "8582074e870b30a5362fa6fd5533284a6a203b4a98b9065b79289112ef926082"
+    },
+    "models/blocks.py": {
+      "url": "https://raw.githubusercontent.com/joncarter1/wav2sleep/278e30463c8149c4e6899b8784da492fec695bd9/src/wav2sleep/models/blocks.py",
+      "sha256": "ee542b3ff394071cde2d3fb542dadb3b204c8f31ed557d9a298e0743bf0ee5ea"
+    },
+    "models/wav2sleep.py": {
+      "url": "https://raw.githubusercontent.com/joncarter1/wav2sleep/278e30463c8149c4e6899b8784da492fec695bd9/src/wav2sleep/models/wav2sleep.py",
+      "sha256": "800347f169cf05cbdf2bc135453fe9b86b9505ee4400ff1d5fa134af2ea45247"
+    },
+    "config.yaml": {
+      "url": "https://huggingface.co/joncarter/wav2sleep-eog/resolve/ef16a45b532f74fc0dfb78a3beb6a39cd746b24e/config.yaml",
+      "sha256": "39005892a36a1037b87f40bf5bf4e7ed21d763a21eb41020563a343b41e18207"
+    },
+    "state_dict.pth": {
+      "url": "https://huggingface.co/joncarter/wav2sleep-eog/resolve/ef16a45b532f74fc0dfb78a3beb6a39cd746b24e/state_dict.pth",
+      "sha256": "5702782e6ce89cfb6d51e348a708d355eed04f3fe4b9653046f9c7af75213e0a"
+    }
+  }
+}

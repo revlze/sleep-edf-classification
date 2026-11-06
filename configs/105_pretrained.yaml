@@ -1,0 +1,48 @@
+# Hypothesis: Official wav2sleep-eog with one observed horizontalEOG and native missing-right channel
+seed: 42
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  sampling_rate: 100
+  epoch_seconds: 30
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+preprocessing:
+  recipe: author noncausal linear interpolation4096 samples/epoch; per-contiguous-segment
+    sample z-score; original architecture
+  units: microvolts before segment z-score
+  resampling: author time-index linear interpolation to4096 samples per30seconds
+  context: each complete contiguous segment; no truncation or invented gaps
+training:
+  enabled: false
+evaluation:
+  protocol: zero-shot provided val -> unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 099_pretrained
+  limitation: official validation reused; author pretraining overlap is separate from
+    downstream subject CV
+experiment_id: 105_pretrained
+summary: Official wav2sleep-eog with one observed horizontalEOG and native missing-right
+  channel
+group: wav2sleep
+model:
+  kind: wav2sleep
+  checkpoint: joncarter/wav2sleep-eog
+  source_revision: 278e30463c8149c4e6899b8784da492fec695bd9
+  checkpoint_revision: ef16a45b532f74fc0dfb78a3beb6a39cd746b24e
+  observed_signal: EOG horizontal -> EOG-L
+  missing_signal: EOG-R omitted, never duplicated
+  reference_limitation: differential horizontalEOG differs from author left-eye derivation
+  recipe: author noncausal linear interpolation4096 samples/epoch; per-contiguous-segment
+    sample z-score; original architecture
+paths:
+  artefacts: artefacts/105_pretrained
+  submission: submissions/105_pretrained.csv

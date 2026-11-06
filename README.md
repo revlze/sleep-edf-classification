@@ -19,15 +19,16 @@ uv run python -m src.run configs/001_linear.yaml --smoke
 По умолчанию выбран только `015_tree`, `STAGE="fixed"`: один fit LightGBM,
 855 готовых признаков, 420 итераций, без поиска и CV. Кэш должен существовать.
 
-Pretrained-серия — `notebooks/05_pretrained.ipynb`: группа `cheap`, сначала smoke,
-затем val → test и submission. Обучение E/F включается отдельно через `ALLOW_TRAINING`.
+Pretrained-серия — `notebooks/05_pretrained.ipynb`: новая серия `058–098`,
+по умолчанию группа `frozen`, сначала smoke, затем val → test и submission.
+Обучаемые группы включаются отдельно через `ALLOW_TRAINING`.
 Отдельное окружение `environments/pretrained/` (Python 3.12,
 PyTorch/CUDA) устанавливается через собственный uv.lock; основной Python не меняется.
 
 ## Структура
 
 - `src/` — данные, признаки, модели, обучение и оценка.
-- `configs/` — LR `001–007_linear`, бустинги `009–015_tree`, pretrained `016–048_pretrained`.
+- `configs/` — LR `001–008_linear`, бустинги `009–015_tree`, pretrained до `098_pretrained`.
 - `notebooks/01_eda.ipynb` — исследование данных.
 - `notebooks/02_train.ipynb` — обучение; `03_eval.ipynb` — сравнение; `04_submit.ipynb` — submission.
 - `notebooks/00_kaggle.ipynb` — запуск на Kaggle и выгрузка результатов одним ZIP.

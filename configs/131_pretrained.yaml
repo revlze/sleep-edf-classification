@@ -1,0 +1,61 @@
+# Hypothesis: Cross-modal calibration + train-only soft transition cost
+seed: 42
+data:
+  version: full_psg_v1
+  root: data/raw
+  sampling_rate: 100
+  epoch_seconds: 30
+  units: microvolts
+  channels:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+preprocessing:
+  recipe: saved immutable inputs; segment resets at record/epoch gaps; train-fold-only
+    learned scaling
+evaluation:
+  protocol: subject GroupKFold3 -> median-epoch full-train refit -> provided val ->
+    unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 113_pretrained
+  limitation: provided val reused; original author pretraining overlap remains separate
+    from downstream CV
+experiment_id: 131_pretrained
+summary: Cross-modal calibration + train-only soft transition cost
+group: calib
+model:
+  kind: dual_stream
+  calibration: true
+  transition: true
+  alignment_weight: 0.05
+  reference: https://github.com/Cx3300903/CalibSleep
+  revision: a6fb8f26725010c6434dfb3b35540f5591f63921
+  implementation: 'compact adaptation: independent 1D CNN per channel, GPU STFT spectral
+    CNN, bidirectional attention and learned gate; replaces author BiGRU/TimesNet;
+    no zero-shot claim'
+  transition_rule: fold-training empirical sqrt row frequency + Laplace1, diagonal1;
+    lambda.02, true transition weight.25; never inference constraints
+  raw_recipe: 50Hz resample_poly, uV/50 clip20 fixed scale, float16 disk pool, 128fft
+    hop50 GPU STFT
+  context: 4 adjacent epochs per training block, reset at record/gap; predictions
+    epoch-local
+  calibration_loss: .05 normalized cross-stream pooled MSE; author within-class cohesion
+    term omitted
+paths:
+  artefacts: artefacts/131_pretrained
+  submission: submissions/131_pretrained.csv
+training:
+  enabled: true
+  epochs: 10
+  patience: 3
+  batch_size: 512
+  lr: 0.001
+  weight_decay: 0.001
+  optimizer: AdamW
+  allow_training_required: true
+  selection: same3 subject folds; fold-only early stopping; median best epoch refit

@@ -1,0 +1,42 @@
+# Hypothesis: Fixed mixture: 0.75*B + 0.25*BestTemporal
+seed: 42
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  sampling_rate: 100
+  epoch_seconds: 30
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+preprocessing:
+  recipe: align by epochID; weighted mean and row normalization; no fitting
+training:
+  enabled: false
+evaluation:
+  protocol: train OOF member selection only -> provided val -> unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 099_pretrained
+  limitation: official validation reused; author pretraining overlap is separate from
+    downstream subject CV
+experiment_id: 112_pretrained
+summary: 'Fixed mixture: 0.75*B + 0.25*BestTemporal'
+group: blends
+model:
+  kind: refinement_ensemble
+  members:
+  - B
+  - BestTemporal
+  weights:
+  - 0.75
+  - 0.25
+  selection: BestGate/BestTemporal chosen only by train OOF macro-F1
+paths:
+  artefacts: artefacts/112_pretrained
+  submission: submissions/112_pretrained.csv

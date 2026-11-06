@@ -102,7 +102,239 @@ NPZ предсказаний должны читаться с allow_pickle=False
 как Unicode, без object-массивов. Исходные Kaggle ZIP сохранены в
 artefacts/archives/pretrained; проверка импорта и исправление сериализации —
 в artefacts/imports/pretrained. Вероятности и метки при исправлении не менялись.
-008 оставлен нетронутым; следующие новые ID начинаются с 058.
+008 подтянут из master и оставлен нетронутым; в новой серии не используется.
+Серия 058–096 завершена пользователем на Kaggle и импортирована: 39 полных прогонов,
+val/test probabilities и submissions проверены, добавлены 39 complete-строк в журнал.
+097 прерван во время OOF fold0, сохранён как interrupted без выдуманных метрик;
+098 выполнен только как smoke, в журнал не добавлен. Веса 096/097 пользователь
+решил не сохранять. ZIP — artefacts/archives/pretrained; аудит импорта —
+artefacts/imports/pretrained_expansion. Анализ качества не выполнялся.
+058–063 — шесть оригинальных frozen staging-моделей; 064–081 — фиксированные смеси;
+082–086 — TinySleepNet classifier/full fine-tuning; 087–091 — frozen embeddings;
+092–095 — N1/N2-N3 specialists; 096–097 — SleepGPT encoder + обучаемая staging head;
+098 — выбор двух новых frozen источников по train-level оценке и смесь с 053.
+Пользователь выбрал только B из временных ансамблей A–M. Он сохранён как
+099_pretrained: 50%019 + 25%082 + 25%085, по готовым val/test probabilities,
+без нового обучения. Это offline_saved_probability_ensemble, отдельный от CLI
+новой серии. Временная папка A–M удалена.
+CLI — python -m src.expansion_run; тот же 05_pretrained.ipynb. По умолчанию frozen,
+SMOKE_ONLY=True, ALLOW_TRAINING=False. Любые обучаемые варианты требуют --allow-training.
+Три общих GroupKFold по subject_id внутри train; refit после выбора только по train.
+Training smoke использует реальные окна около начала сна по train labels:
+старый prefix399 состоял целиком из Wake. Полный train/val/test не меняется,
+сигналы выбранного smoke выравниваются по ID, его метрики не являются оценкой качества.
+Промежуточный early stopping использует фиксированные блоки по всей длине held-out
+записей; итоговый OOF покрывает fold полностью. Tiny BN running stats фиксированы.
+Кэш embeddings/preprocessing отдельный от OUTPUT_ROOT. Старые probabilities и
+результаты сохраняются. D3/D4/E читают только готовые 106 признаков, включая test;
+автоматического переизвлечения нет. Проверяются definition, source, labels и IDs.
+Официальные веса новых моделей закреплены в src/expansion_assets.json и проверяются
+по SHA-256; нет fallback на случайные параметры. SeqSleepNet-phan опубликован с
+метаданными MASS, хотя исходное задание называло Sleep-EDF. SleepFM-2 не получает
+фиктивного ID: указанный авторами публичный репозиторий вернул 404 при проверке.
+SleepGPT использует опубликованный large encoder, EDF channels 3/5/7, оригинальный
+STFT и новую обучаемую Linear(1536,5); partial размораживает blocks10/11 + norm.
+Компактный ZIP исключает сигналы, embeddings и веса; best/last и classifier.joblib
+экспортируются отдельно. Подробности — docs/expansion_runbook.md.
+Серия 100–117 выполнена пользователем на Kaggle и импортирована:18 полных прогонов
+и18 smoke. В experiments.csv добавлены18 complete-строк с validation-метриками;
+прежние93 строки сохранены. Вероятности, ID, submissions, OOF, наличие best/last
+и целостность архивов проверены без загрузки моделей и анализа качества.
+Результаты — artefacts/<ID>, smoke — artefacts/smoke/<ID>, веса —
+artefacts/trained-checkpoints/{full,smoke}, включая shared nested экспертов.
+Готовые embeddings, folds и nested OOF — artefacts/cache/refinement/{full,smoke}.
+Оригинальные триZIP — artefacts/archives/pretrained; аудит и копии журнала —
+artefacts/imports/pretrained_refinement/20261105T181752Z. Checkpoints не изменялись.
+CLI — python -m src.refinement_run; launcher — тот же 05_pretrained.ipynb.
+100–104 — residual softmax gates с prior019/082/085=0.5/0.25/0.25 и CE+KL;
+105 — официальный wav2sleep-eog с одним horizontalEOG в слоте EOG-L, без EOG-R.
+Авторская архитектура поддерживает subset сигналов; горизонтальное дифференциальное
+отведение отличается от авторского EOG-L, это явное ограничение рецепта.
+106–110 — residual TCN/BiGRU на frozen Tiny128+AnySleep6, контекст20/100;
+110 добавляет center-driven loss соседей. Это downstream модели, не воспроизведение
+архитектур SleepLT/CSPT-SleepNet.111–116 — шесть фиксированных итоговых смесей.
+BestGate/BestTemporal выбираются только по train OOF.117 — последний дорогой full
+TinyFT с покрытием20-эпоховых tiles, sleep/random supplements и равным суммарным
+весом людей в CE. Для сегментов короче20 полные обучающие окна не создаются.
+Порядок групп: prepare -> gates -> wav2sleep -> temporal -> blends -> wav_blend ->
+tiny -> tiny_blends. Самостоятельно полную серию не запускать.
+Для корректной downstream CV простого повторного разбиения готового082/085 OOF
+недостаточно: возникает утечка через обучение экспертов на других folds.
+prepare один раз строит inner GroupKFold2 внутри каждого из3 outer folds:
+12 внутренних fits082/085 с заранее фиксированными5 эпохами, без outer held labels.
+Outer held вероятности исходных082/085 переиспользуются; итоговые heads обучаются
+на исходных train OOF, а val/test используют исходные full-train refit вероятности.
+Уменьшенное число людей в inner source models относительно final experts —
+ограничение nested stacking; исходный author-pretraining overlap остаётся отдельным.
+Smoke структурный, не независимая оценка качества. Отдельные smoke/full кэши.
+Старые train019, OOF082/085, val/test и106 признаки упакованы без нового инференса
+в artefacts/cachepacks/sleep-edf-refinement-inputs.zip. Старые результаты сохранены.
+Embeddings прежние ZIP не содержат; при наличии отдельного кэша проверяем ID,
+данные, checkpoint assets и слой. Иначе извлекаем один раз с увеличенными GPU batches.
+Vectorized GPU window gathers для heads; memory-mapped pool и cached metadata
+для Tiny исключают повторное распаковывание NPZ и hash/header чтения в каждом batch.
+Новые Tiny CNN/LSTM batches256; AnySleep до4 одинаковых по длине исходных блоков;
+117 оценивает GPU-память одним backward на16 окнах без обновления параметров,
+выбирает физический batch до128, сохраняет размер и уменьшает его при CUDA OOM.
+Один процесс использует одну GPU. После prepare группы gates/temporal по умолчанию
+делятся на две очереди cuda:0/cuda:1 (PARALLEL_DEVICES=[] отключает параллелизм),
+CPU-потоки делятся между процессами. Для каждого процесса отдельный failure-report
+и один display_id; Stop завершает оба дерева uv-процессов. Остальные группы последовательные.
+Общий индикатор показывает номер конфигурации,
+этап/число этапов, fold/refit, эпоху/batch, время конфигурации и этапа; refresh7секунд.
+Результаты, best/last веса и reusable embeddings/nested/folds экспортируются тремя
+ZIP; сигналы/pools не входят в переносимый кэш. Resume требует соответствующих
+RESUME_ROOT, RESUME_TRAINED_ROOT и RESUME_CACHE_ROOT и той же версии кода.
+Серия118–123 выполнена пользователем наKaggle и импортирована:6 полных прогонов
+и6 smoke. В experiments.csv добавлены6 complete-строк с полной validation;
+прежние111 строк сохранены. ПровереныCRC/SHA, ID/CSV, logits/counts/fallback,
+воспроизведение старого rolling и фиксированные смеси без загрузки моделей.
+Результаты — artefacts/<ID>, smoke — artefacts/smoke/<ID>, submissions — стандартно.
+CNN-кэш — artefacts/cache/voting:80 full и4 smoke записи, два уникальных backbone.
+ZIP — artefacts/archives/pretrained; аудит и общий source snapshot —
+artefacts/imports/pretrained_voting/20261105T210959Z. Анализ качества не выполнялся.
+CLI python -m src.voting_run, тот же05_pretrained.ipynb.
+118/119/120 — PhysioEx logit voting исходных041/082/085, L20.121 — 50%019+50%118;
+122 — 50%019+25%119+25%120;123 — 50%019+25%118+12.5%119+12.5%120.
+Обучения, CV и поиска весов нет. Старые rolling adapter/training inference не изменены.
+Авторский voting закреплён PhysioEx66b24320:offset0..19, только полные окна,
+logits всех позиций усредняются по фактическому числу голосов, затем softmax.
+Forward/accumulation float32 без autocast; соответствие авторскому циклу проверено.
+Сегменты короче20 автор пропускает. Для них явно сохраняется native-short rolling
+fallback с official vote_count0; все ID остаются. В full val6 таких эпох, test11.
+Основные метрики/CSV охватывают все ID; отдельно сохраняются covered-only метрики,
+counts/fallback mask и mean_logits. Не выдавать fallback за официальный voting.
+Voting и paired rolling получаются из одних CNN features и тех же LSTM окон.
+Для full сверяется воспроизведение старых041/082/085 probabilities; smoke отличается
+граничным preprocessing из-за prefix-селекции и используется только для структуры.
+Сравнения на val — со041/082/085/053/099/113, по классам/людям, исправленным и новым
+ошибкам, истинным переходам N1/N2 и N2/N3. Test labels не читаются.
+Frozen refit checkpoints082/085 строго восстанавливаются из best.pt с проверкой
+SHA, contract, refit epoch и trainable manifest. Original041/082 CNN реально
+идентичны,085 отличается. Кэш2048 CNN features учитывает параметры И buffers,
+данные, IDs и preprocessing; signals один раз на запись, CNN256 и LSTM512 наGPU.
+Предыдущие contextual128/AnySleep6 embeddings и106-фичи для voting не применимы.
+Новый Input bundle — artefacts/cachepacks/sleep-edf-voting-inputs.zip (26.5MiB):
+официальные Tiny assets, full-refit best082/085 и готовые val/test references.
+Внешние скачивания весов не нужны. Порядок:prepare smoke -> prepare full -> all.
+prepare строит только два frozen CNN backbone по val/test; модели идут двумя GPU
+очередями, после barrier121–123 читают готовые probabilities. PARALLEL_DEVICES=[]
+включает последовательный режим. CPU-потоки делятся между очередями; Stop прежний.
+ZIP результатов накопительный, с одним общим source snapshot. Отдельный CNN ZIP
+сливает writable/read-only voting caches, исключает signals; может быть около1.8GB
+до сжатия полного val/test. Новые веса не создаются и не экспортируются.
+Resume:RESUME_ROOT для результатов; voting CNN_INPUTS обнаруживается вInput и
+читается без копирования, RESUME_CACHE_ROOT необязателен. Следующий ID —147.
+Smoke не записывается в experiments.csv; при импорте voting полные метрики
+сохранялись только для всех43206 эпох val, отдельно от covered-only оценки.
+Серия124–146 выполнена на Kaggle и импортирована:23 full+23 smoke. CLI `python -m src.physiology_run`,
+launcher тот же05_pretrained.ipynb, та же веткаfeat/pretrained-refinement.
+124/125 — native YASA0.7 EEG+EOG без EMG/демографии, classifierSHA закреплён;
+126–128 — frozen Tiny contextual128 + AnySleep pre-classifier6, MLP CE/SupCon/hard negatives;
+129–131 — компактная обучаемая адаптация CalibSleep (не zero-shot/точная реплика):
+три channel-specific CNN, GPU STFT, cross-attention/gating, soft train-fold transition prior.
+132/133_tree — event80 / event80+106, ровно2 LightGBM trials на3 общих subject folds;
+134/135 — bounded class-wise residual113 без/с event80;136–145 — фиксированные75/25 смеси;
+146 — .5*113+.25*BestContrastive+.25*BestCalib по train OOF. F1/F2/F3 переиспользуют
+существующие IDs136–145 черезfamily_selection.json, новых дубликатов смесей нет.
+В experiments.csv добавлены23 complete-строки по полной validation; прежние117 строк сохранены, всего140. Smoke в журнал не добавлен.
+Старые predictions/OOF/embeddings134/106 и6 nested Tiny experts упакованы без нового
+инференса в artefacts/cachepacks/sleep-edf-physiology-inputs.zip (~409MiB).
+Новый frozen embedding reader проверяет ID/данные/слой/assets/SHA и запрещает extraction fallback.
+Для fusion CV повторного разбиения глобального102/106 OOF недостаточно: подготовка строит
+четыре непересекающиеся subject роли A(experts)/B(upstream heads)/C(correction)/D(held)
+в каждом из3 outer folds. Переиспользуются6 сохранённых inner0 Tiny экспертов, новые
+backbones НЕ обучаются; обучаются6 небольших102/106 heads только наB. C/D не входят
+в A/B.082 использует готовые128 features после проверки всех frozen параметров и buffers;
+085 использует прежние held probabilities наB/C, новый inference только наD.
+Это честная role-split CV с меньшими upstream/calibration выборками, не точный recursive
+nested refit исходной113; ограничение явно сохраняется. Final correction fit — на исходных
+aligned train OOF; val/test — исходные full-train refit probabilities. Smoke только структурный.
+Event detection выполняется один раз на непрерывный сегмент без hypnogram: peak counts
+и точное перекрытие длительности с30s эпохами;5s powers/EOG dynamics, всего80 признаков.
+YASA-сегмент из1 эпохи: один повтор terminal sample для strict-window API, time_norm=0;
+ограничение и сообщения о старом pickle classifier сохраняются в metadata, ID не теряются.
+Группы: contrastive -> yasa -> features -> events -> blends -> signals -> calib ->
+fusion_prepare -> fusion -> blends -> final; all запускает эту цепочку smoke, затемfull.
+По умолчанию features, SMOKE_ONLY=True, ALLOW_TRAINING=False. NN группы имеют2GPU очереди,
+CPU threads делятся; feature workers также делят CPU. Batch SupCon640 / dual-stream512 /
+residual4096, AMP, GPU STFT, mmap signals, OOM автоматом уменьшает batch и повторяет эпоху.
+Один display на процесс,7s refresh, config/stage/fold/epoch/batch и реальное время.
+Экспорт3 накопительных ZIP: results (код/метрики/predictions/submissions), cache (events/
+roleOOF без signals/pools), trained (best/last/LightGBM). Resume требует всех3 соответствующих
+корней и той же версии кода. Изменён только isolated pretrained env: YASA0.7.0, pandas2.2.3
+(совместимость SciPy1.15); корневое окружение и завершённые recipes не менялись.
+
+Импорт124–146: результаты artefacts/<ID>, smoke artefacts/smoke/<ID>,23 CSV в submissions/.
+Веса — artefacts/trained-checkpoints/{full,smoke}/<ID>, включая6 role_stack heads в каждомрежиме;
+переносимый кэш — artefacts/cache/physiology/{full,smoke,folds}. Проверены CRC/SHA архивов,
+val/test IDs и CSV, арифметика метрик, OOF/folds, смеси/селекторы, полнота event/YASA/role
+кэша и наличие best/last/LightGBM с доступнымиSHA. Модели не загружались, обучение не запускалось.
+Во всех23 full были только missing-experiments.csv ошибки уже после сохранения численных
+результатов. Журнал и общие CSV восстановлены; оригинальные errorJSON сохранены отдельно
+в аудите. Отложенные этим сбоем парные сравнения восстановлены из готовых вероятностей
+штатной функцией, без нового inference и без интерпретации качества моделей.
+Исходные3 ZIP неизменными перемещены в artefacts/archives/pretrained. Аудит и source snapshot:
+artefacts/imports/pretrained_physiology/20261106T173329Z. Из снимка вZIP фильтром*.lock был
+исключён environments/pretrained/uv.lock: он восстановлен из заявленного9fbaf0c с точнымSHA.
+Численные данные, параметры и checkpoint-файлы при импорте не изменялись.
+В fusion_prepare обнаружено многократное чтение z['probabilities'] внутри цикла по строкам;
+этот известный bottleneck пока не исправлялся при импорте. Полную завершённую серию не повторять.
+
+Серия147–155 выполнена пользователем на Kaggle и импортирована:9 full+9 smoke для проверки
+длины AnySleep context. CLI `python -m src.context_run`, тот же05_pretrained.ipynb.
+147=core256/halo128,148=core512/halo256,149=целый непрерывный сегмент;150–152 — B
+с соответствующим новым019;153–155 — только диагностическая подстановка в113
+с сохранёнными outputs102/106. Это НЕ корректно переобученная113; диагностические
+варианты исключены из выбора. A1 переиспользует019/099/113, нового ID не получает.
+Официальные run1/2/3, preprocessing, float32, encoder grid16 и границы сегментов
+сохранены. Только batch одинаковых длин уменьшается при OOM; при batch1 OOM
+вариант явно skipped_oom, зависимые смеси skipped_dependency, без скрытого
+перехода к меньшему контексту/precision или падения остальных вариантов.
+Один GPU-процесс, preprocessing один раз на сегмент для всех режимов и checkpoints;
+MAX_BATCH4, все доступные CPU threads. Full-record всегда batch1.
+Порядок одного launcher-run: smoke -> все full val -> зафиксировать выбор по val
+macro-F1 простого B (baseline099 тоже кандидат) -> test ВСЕХ успешных вариантов.
+TEST_POLICY=all по умолчанию; test labels не читаются. Результаты и9 submissions
+экспортируются одним накопительным ZIP без signals/embeddings/весов, с uv.lock.
+Перед test строки журнала validation_only; после успешного test complete. Smoke
+в журнал не попадает. Локально проверены только синтетические alignment/OOM и
+короткий двухэпоховый smoke с настоящими checkpoints, не полный эксперимент.
+Input — artefacts/cachepacks/sleep-edf-anysleep-context-inputs.zip (~50MiB):
+три официальных AnySleep веса/source и сохранённые val/test019/082/085/099/102/106/113.
+Старые feature/embedding/CNN кэши и FT weights для этой серии не нужны.
+Resume: исходный Input bundle, тот же CODE_REF и RESUME_ROOT с ZIP результатов;
+record probability caches включены в результат, сигналы пересчитываются только
+для незавершённых записей. Старые результаты/конфигурации не меняются. Следующий ID156.
+
+Импорт147–155:9 complete-строк по полной validation добавлены в experiments.csv,
+прежние140 строк сохранены; всего149. Все9 full охватывают43206 val и66222 test эпох,
+все9 smoke —160 val/test. Проверены CRC/SHA всех778 файлов ZIP, ID/метаданные,
+confusion/F1, CSV и фиксированные смеси,126 record probability caches, длины окон
+и границы сегментов.149 действительно выполнил целые непрерывные сегменты batch1
+на val/test без temporal fallback; ошибок и OOM-пропусков нет. Модели при импорте
+не загружались, inference/обучение и анализ качества не выполнялись.
+Результаты — artefacts/<ID>, smoke — artefacts/smoke/<ID>,9 CSV — submissions/<ID>.csv.
+Оригинальный ZIP — artefacts/archives/pretrained; аудит, source snapshot и общие
+timing/selection отчёты — artefacts/imports/pretrained_context/20261106T191847Z.
+
+Исследования завершены по решению пользователя: основной финал113_pretrained,
+второй099_pretrained (B). Новые эксперименты и изменения модели не планировать
+без нового запроса. Финальные публичные Kaggle notebooks и пакет для сдачи ещё
+не подготовлены; текущий05 — исследовательский launcher последней серии.
+Следующий этап согласуется отдельно: два выполненных публичных notebook с точным
+воспроизведением всех test id,label из сохранённых состояний, без обучения,
+с закреплёнными Inputs/кодом/зависимостями и SHA-256 весов/CSV. Валидационные
+метрики experiments.csv не подменять числами дополнительной оценки или Kaggle.
+
+Исправлена инициализация experiments.csv в новом OUTPUT_ROOT: smoke не пишет журнал,
+а прежний full падал после сохранения metrics/probabilities/submission на отсутствии CSV.
+upsert_result теперь поддерживает новый журнал под общей блокировкой.05 перед запуском,
+после него и перед экспортом вызывает src.result_recovery: восстановление индекса/копий CSV
+по завершённым metrics+provenance, удаление только исправленных missing-journal ошибок.
+Численные исходники и guarded implementation124–146 не менялись, checkpoints совместимы;
+не создавать новый OUTPUT_ROOT и не пересчитывать завершённые модели ради этого исправления.
+
 Другие семейства моделей остаются каркасом. Проверенные команды и ограничения
 смотри в README. Полную серию выполняем на Kaggle; smoke не является экспериментом
 качества и не записывается в experiments.csv.
