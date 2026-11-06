@@ -65,3 +65,5 @@ select = ["E4", "E7", "E9", "F", "I", "UP"]
 "src/models/tiny_voting.py" = "py312"
 "src/physiology_*.py" = "py312"
 "src/training/physiology.py" = "py312"
+
+"src/result_recovery.py" = "py312"
