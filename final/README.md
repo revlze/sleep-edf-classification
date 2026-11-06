@@ -5,40 +5,56 @@
 src/sleep_edf_final/vendor/. Основная модель113 использует099-подобную базовую смесь
 и heads102/106; её веса, контекст и floating-point порядок сохранены.
 
-## Kaggle
+## Kaggle: Internet Off
 
 1. Подключите `levshaazz/sleep-edf-full-psg-course-data`, **version1**.
-2. Подключите ZIP `sleep-edf-final-inputs.zip`, подготовленный `python final/package.py bundle`.
-   В нём final-код и48.5MiB необходимых весов, без данных, старых probabilities и кэшей.
-3. Откройте06_final.ipynb, выберите T4x2, Internet On для установки pinned dependencies.
-4. `OUTPUT_SECOND_SUBMISSION=False` создаёт только `submission.csv` (113).
-   `True` дополнительно создаёт `submission_2.csv` (099). Остальные значения уже настроены.
-5. Run All. Сначала106 признаков из raw test в Python3.14, затем frozen backbones и
-   heads в Python3.12. Один GPU-процесс использует cuda:0; GPU-память не объединяется.
-6. Для полного запуска требуется `run_report.json: status=EXACT_MATCH`, epochs66222
-   и label_mismatches0 у каждого включённого решения. Скачайте результаты одним ZIP.
+2. Подключите новый `sleep-edf-final-offline-inputs.zip` — код и веса. Прежний
+   `sleep-edf-final-inputs.zip` v1 с сетевой установкой для финала не используется.
+3. Подключите `sleep-edf-final-runtime-linux.zip` — готовые Python3.12.12/3.14.2
+   и пакеты Linux x86_64, собранные строго по двум uv.lock. Он существенно больше
+   model Input, потому что включает PyTorch и CUDA-библиотеки. Внутри сохранены лицензии.
+   Внутренние архивы имеют расширение.bin: это защищает их от автоматической
+   распаковки Kaggle при загрузке; notebook извлечёт их сам после проверки SHA.
+4. Откройте06_final.ipynb, выберите T4x2 и **Internet Off до запуска**.
+5. `OUTPUT_SECOND_SUBMISSION=False`: только113. `True`:113 и099 без повторения backbones.
+6. Run All. Notebook локально распакует оба окружения, создаст venv без pip,
+   восстановит site-packages и проверит Python/версии всех distributions и SHA архивов.
+   `uv sync`, `pip install`, скачивание Python и GitHub во время исполнения не вызываются.
+7. Затем106 признаков заново из raw test, frozen backbones, heads и CSV.
+   Требуются status=EXACT_MATCH, epochs66222, label_mismatches0 для включённых решений
+   и полный notebook runtime≤7200s. Последняя ячейка экспортирует компактный ZIP.
 
-Загрузка teacher-only документов в Kaggle не требуется. В Input нет токенов или
-персональных данных; private GitHub для inference не используется.
+Runtime Input можно держать приватным на этапе тестирования. Перед дедлайном обеспечьте
+преподавателю доступ именно к его фиксированной версии; public notebook не открывает
+автоматически приватные Inputs. В нём нет личной формы или teacher-only отчётности.
 
-## Локальный CLI (Linux)
+## Подготовка offline Input (только сборщик использует сеть)
+
+На Linux x86_64, например в WSL Ubuntu, из корня репозитория:
 
 ```sh
-uv sync --project final --locked --no-dev --python 3.12.12
-uv sync --project final/environments/features --locked --no-dev --python 3.14.2
-uv run --project final --locked --no-dev python final/run.py \
-  --data-root archive/data/raw --output-root final/outputs/run \
-  --feature-python final/environments/features/.venv/bin/python \
-  --device cuda:0 --threads 4 --feature-workers 2 --output-second-submission
+python3 final/offline/build_runtime.py --final-root final \
+  --work-dir /tmp/sleep-edf-offline-runtime-v1 \
+  --output final/bundles/sleep-edf-final-runtime-linux.zip
+python3 final/package.py bundle
 ```
 
-На Windows feature-python указывает на `.venv/Scripts/python.exe`. Профиль CPU
-предусмотрен для разработки; совпадение всех выбранных labels в нём отдельно не заявляется.
-`--smoke-epochs 4` обрабатывает только начало одной записи и не является оценкой качества.
+Сборщик загружает закреплённый uv с проверкой SHA, устанавливает managed Python и
+выполняет `uv sync --locked --no-dev`. В Input сохраняются Python и site-packages
+отдельно: на Kaggle venv создаётся заново с правильными локальными путями. Windows
+.venv не переносится. Lock-файлы/модели/численные настройки не изменяются.
 
-Повторный запуск может переиспользовать только кэш этого же кода/данных/профиля в output-root.
-Исходные research predictions не используются. При несовпадении contracts старый результат
-сохраняется и требуется другой output-root. ZIP результатов исключает временные кэши.
+Инвентарь пакетов, SHA каждого tar и исходных lock-файлов — offline_manifest.json.
+Runtime ZIP не коммитится в Git; исходник сборщика и локального загрузчика коммитится.
+Предвычисленных признаков или готовых probabilities в runtime нет.
+
+Готовый ZIP проверен холодным восстановлением внутри Linux `unshare --net` и
+реальным CPU inference четырёх эпох с обоими CSV. SHA ZIP и границы проверки —
+offline/verification.json. Полный T4-run и его длительность пока предстоит проверить.
+
+Повторный запуск может переиспользовать только кэш той же версии в output-root.
+Неполностью распакованное окружение сохраняется; при прерывании выберите новый
+RUNTIME_CACHE. Исследовательские prediction caches не используются.
 
 ## Файлы и статус
 

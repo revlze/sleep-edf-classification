@@ -25,3 +25,11 @@ OUTPUT_SECOND_SUBMISSION=True добавляет099 как submission_2.csv.
 До правок проверяй Git diff, сохраняй результаты. Не запускай долгое обучение.
 Веса только выбранных компонентов; SHA и vendor licenses обязательны.
 Проверки: uv run --project final ruff check final; uv run --project final python -m pytest final/tests.
+
+Финальный runtime обязан работать с Internet Off от начала до конца.
+final/offline/build_runtime.py использует uv/сеть только при предварительной Linux-сборке.
+final/offline_runtime.py в Kaggle только проверяет/распаковывает архивы и создаёт venv
+через stdlib без pip. Не возвращать pip/uv sync/download в notebook06.
+Новые Inputs: sleep-edf-final-offline-inputs.zip (code kindv2) и отдельный
+sleep-edf-final-runtime-linux.zip. Старый code Input v1 не считать offline-готовым.
+Runtime-бинарники, build caches и teacher-only файлы вне Git. Численные модели не меняются.

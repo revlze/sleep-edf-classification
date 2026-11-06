@@ -1,5 +1,5 @@
 {
-  "status": "awaiting_full_kaggle_execution",
+  "status": "awaiting_full_kaggle_offline_execution",
   "notebook": {
     "url": null,
     "version": null
@@ -15,6 +15,12 @@
       "slug": null,
       "version": null,
       "role": "frozen final code and weights bundle"
+    },
+    {
+      "owner": null,
+      "slug": null,
+      "version": null,
+      "role": "fixed Linux offline Python runtimes and installed packages"
     }
   ],
   "solutions": {
@@ -37,6 +43,7 @@
     "PDF of executed notebook",
     "full run EXACT_MATCH report for both113/099",
     "Kaggle submission IDs",
-    "exact version of final code/weights Input; teacher access"
-  ]
+    "exact versions of final code/weights and offline runtime Inputs; teacher access"
+  ],
+  "internet": "off for entire final execution"
 }

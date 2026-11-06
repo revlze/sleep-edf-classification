@@ -18,3 +18,11 @@
 SHA-256, размеры и источники каждого необходимого файла весов — weights/manifest.json.
 Нейросетевые веса не скачиваются с плавающей ветки во время inference.
 Файлы чужих лицензий сохранены рядом с vendored исходниками.
+
+## Offline-окружения
+
+Отдельный runtime Input содержит CPython3.12.12/3.14.2 и distributions из двух
+uv.lock, включая PyTorch/CUDA/NVIDIA, NumPy/SciPy и LLVM/numba. Это сборник
+зависимостей с разными лицензиями, не единый новый MIT-пакет. Их LICENSE/notices
+сохраняются внутри Python и site-packages; версии и SHA архивов перечислены в
+offline_manifest.json. Код загрузчика не скачивает и не переустанавливает пакеты.
