@@ -281,7 +281,7 @@ artefacts/imports/pretrained_physiology/20261106T173329Z. Из снимка вZI
 В fusion_prepare обнаружено многократное чтение z['probabilities'] внутри цикла по строкам;
 этот известный bottleneck пока не исправлялся при импорте. Полную завершённую серию не повторять.
 
-Подготовлена, но ещё не выполнена на полной выборке серия147–155 для проверки
+Серия147–155 выполнена пользователем на Kaggle и импортирована:9 full+9 smoke для проверки
 длины AnySleep context. CLI `python -m src.context_run`, тот же05_pretrained.ipynb.
 147=core256/halo128,148=core512/halo256,149=целый непрерывный сегмент;150–152 — B
 с соответствующим новым019;153–155 — только диагностическая подстановка в113
@@ -306,6 +306,17 @@ Input — artefacts/cachepacks/sleep-edf-anysleep-context-inputs.zip (~50MiB):
 Resume: исходный Input bundle, тот же CODE_REF и RESUME_ROOT с ZIP результатов;
 record probability caches включены в результат, сигналы пересчитываются только
 для незавершённых записей. Старые результаты/конфигурации не меняются. Следующий ID156.
+
+Импорт147–155:9 complete-строк по полной validation добавлены в experiments.csv,
+прежние140 строк сохранены; всего149. Все9 full охватывают43206 val и66222 test эпох,
+все9 smoke —160 val/test. Проверены CRC/SHA всех778 файлов ZIP, ID/метаданные,
+confusion/F1, CSV и фиксированные смеси,126 record probability caches, длины окон
+и границы сегментов.149 действительно выполнил целые непрерывные сегменты batch1
+на val/test без temporal fallback; ошибок и OOM-пропусков нет. Модели при импорте
+не загружались, inference/обучение и анализ качества не выполнялись.
+Результаты — artefacts/<ID>, smoke — artefacts/smoke/<ID>,9 CSV — submissions/<ID>.csv.
+Оригинальный ZIP — artefacts/archives/pretrained; аудит, source snapshot и общие
+timing/selection отчёты — artefacts/imports/pretrained_context/20261106T191847Z.
 
 Исправлена инициализация experiments.csv в новом OUTPUT_ROOT: smoke не пишет журнал,
 а прежний full падал после сохранения metrics/probabilities/submission на отсутствии CSV.
