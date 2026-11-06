@@ -35,3 +35,24 @@ tests/*
 .linear.lock
 experiments.csv.lock
 experiments.csv.tmp
+
+# Historical local data/results/notes stay private after repository reorganization
+/archive/data/*
+!/archive/data/.gitkeep
+/archive/artefacts/*
+!/archive/artefacts/.gitkeep
+/archive/submissions/*
+!/archive/submissions/.gitkeep
+/archive/docs/*
+!/archive/docs/.gitkeep
+/archive/tests/*
+!/archive/tests/.gitkeep
+/archive/experiments.csv.lock
+
+# Final outputs and teacher-only package, including personal information
+/final/outputs/
+/final/bundles/
+/final/.pytest_cache/
+/moodle_package/
+/team_info.csv
+/sleep-edf-moodle*.zip

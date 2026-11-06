@@ -1,53 +1,46 @@
 # Sleep-EDF 2026
 
-Классификация пяти стадий сна по EEG/EOG. Основная метрика — macro-F1;
-валидация внутри train группируется по subject_id.
+Классификация стадий W, N1, N2, N3 и REM по двум EEG и одному EOG. Решение SBMTeam
+объединяет AnySleep, дообученные TinySleepNet и небольшие heads над их прогнозами.
+Исследования завершены; выбраны основной ансамбль **113** и резервный **099**.
 
-## Запуск
+| Решение | Provided validation macro-F1 | Public leaderboard¹ |
+|---|---:|---:|
+| 113: B + physiology gate + residual TCN | 0.853972 | 0.85207 |
+| 099: 50% AnySleep + 25% Tiny082 + 25% Tiny085 | 0.852765 | 0.84951 |
 
-Python 3.14, зависимости закреплены в uv.lock.
+¹ По сохранённым отправкам/скриншоту команды. Это отдельная оценка, не validation и
+не private leaderboard. Многократно использованный val не является независимым holdout;
+авторское pretraining AnySleep пересекается с частью validation-людей.
 
-```sh
-uv sync --locked
-uv run python -m src.run configs/001_linear.yaml --smoke
+## Финальный запуск
+
+[final/notebooks/06_final.ipynb](final/notebooks/06_final.ipynb) — единый Kaggle notebook.
+По умолчанию создаёт `submission.csv` для113. `OUTPUT_SECOND_SUBMISSION=True`
+дополнительно создаёт `submission_2.csv` для099. Все прогнозы вычисляются из raw test;
+обучения и чтения test labels нет. Интернет нужен только для установки зависимостей.
+
+Подключаются исходный full_psg_v1 **version1** и подготовленный Input с кодом/весами.
+Инструкции и упаковка Input — в [final/README.md](final/README.md).
+Код не зависит от приватного GitHub или Kaggle Secrets.
+
+**Статус воспроизведения:** локальный структурный smoke пройден. Полный запуск06 на T4
+и проверка точного совпадения всех66222 пар id,label с выбранными отправками ещё ожидаются.
+Пустой notebook без outputs и отсутствие PDF не выдаются за завершённую сдачу.
+
+## Устройство решения и исследования
+
+- [Решение и численные соглашения](final/docs/solution.md)
+- [История экспериментов и отрицательные результаты](final/docs/research.md)
+- [Воспроизводимость и ограничения](final/docs/reproducibility.md)
+- [Внешний код и веса](final/docs/third_party.md)
+
+```text
+final/             Frozen inference, notebook06, два конфига, веса, тесты и документация
+archive/           Исторические src, configs, notebooks и окружения исследований
+experiments.csv    Полная история149 записей; final/experiments.csv содержит выбранные2
 ```
 
-Для полноценного запуска уберите `--smoke`. Пути задаются через
-`--data-root` и `--output-root`; по умолчанию это `data/raw` и `artefacts`.
-Если данные лежат непосредственно в `data/`, добавьте `--data-root data`.
-Локальный запуск — `notebooks/02_train.ipynb`: выбирает LR или бустинги.
-По умолчанию выбран только `015_tree`, `STAGE="fixed"`: один fit LightGBM,
-855 готовых признаков, 420 итераций, без поиска и CV. Кэш должен существовать.
-
-Pretrained-серия — `notebooks/05_pretrained.ipynb`: новая серия `058–098`,
-по умолчанию группа `frozen`, сначала smoke, затем val → test и submission.
-Обучаемые группы включаются отдельно через `ALLOW_TRAINING`.
-Отдельное окружение `environments/pretrained/` (Python 3.12,
-PyTorch/CUDA) устанавливается через собственный uv.lock; основной Python не меняется.
-
-## Структура
-
-- `src/` — данные, признаки, модели, обучение и оценка.
-- `configs/` — LR `001–008_linear`, бустинги `009–015_tree`, pretrained до `098_pretrained`.
-- `notebooks/01_eda.ipynb` — исследование данных.
-- `notebooks/02_train.ipynb` — обучение; `03_eval.ipynb` — сравнение; `04_submit.ipynb` — submission.
-- `notebooks/00_kaggle.ipynb` — запуск на Kaggle и выгрузка результатов одним ZIP.
-- `experiments.csv` — индекс завершённых экспериментов.
-- `data/raw/`, `artefacts/`, `submissions/`, `docs/` — локальные файлы вне Git.
-
-Поставка `full_psg_v1`: в корне `labels.csv`, `sample_submission.csv`,
-`epochs/{train,val,test}/*.npz`. Классы: W, N1, N2, N3, REM.
-Для LR `MANIFEST.json` не требуется: кэш учитывает метки, параметры, размеры
-и время изменения NPZ. Проверки по исходным контрольным суммам не выполняются.
-Признаки и завершённые trials переиспользуются; прерванный fold обучается заново.
-Готовые кэши читаются параллельно; создание одного NPZ сериализуется отдельно.
-Разные эксперименты и инференс завершённой модели могут работать одновременно.
-Запись одного CSV и экспорт результатов защищены отдельными блокировками.
-
-## Проверки
-
-```sh
-uv run ruff check .
-uv run ruff format --check .
-uv run python -m pytest
-```
+Все численные validation-метрики журнала сохранены; изменены только пути после переноса.
+Локальные данные, кэши, архивы прогонов и старые рабочие заметки остаются вне Git.
+Материалы преподавателю и персональные формы готовятся отдельно от публичного решения.
