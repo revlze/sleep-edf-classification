@@ -185,7 +185,15 @@ CPU-потоки делятся между процессами. Для кажд
 Результаты, best/last веса и reusable embeddings/nested/folds экспортируются тремя
 ZIP; сигналы/pools не входят в переносимый кэш. Resume требует соответствующих
 RESUME_ROOT, RESUME_TRAINED_ROOT и RESUME_CACHE_ROOT и той же версии кода.
-Подготовлена inference-only серия118–123, CLI python -m src.voting_run, тот же05_pretrained.ipynb.
+Серия118–123 выполнена пользователем наKaggle и импортирована:6 полных прогонов
+и6 smoke. В experiments.csv добавлены6 complete-строк с полной validation;
+прежние111 строк сохранены. ПровереныCRC/SHA, ID/CSV, logits/counts/fallback,
+воспроизведение старого rolling и фиксированные смеси без загрузки моделей.
+Результаты — artefacts/<ID>, smoke — artefacts/smoke/<ID>, submissions — стандартно.
+CNN-кэш — artefacts/cache/voting:80 full и4 smoke записи, два уникальных backbone.
+ZIP — artefacts/archives/pretrained; аудит и общий source snapshot —
+artefacts/imports/pretrained_voting/20261105T210959Z. Анализ качества не выполнялся.
+CLI python -m src.voting_run, тот же05_pretrained.ipynb.
 118/119/120 — PhysioEx logit voting исходных041/082/085, L20.121 — 50%019+50%118;
 122 — 50%019+25%119+25%120;123 — 50%019+25%118+12.5%119+12.5%120.
 Обучения, CV и поиска весов нет. Старые rolling adapter/training inference не изменены.
@@ -217,8 +225,8 @@ ZIP результатов накопительный, с одним общим 
 до сжатия полного val/test. Новые веса не создаются и не экспортируются.
 Resume:RESUME_ROOT для результатов; voting CNN_INPUTS обнаруживается вInput и
 читается без копирования, RESUME_CACHE_ROOT необязателен. Следующий ID —124.
-118–123 пока подготовлены: короткие локальные smoke не являются полными экспериментами
-и в experiments.csv не добавляются. Полные прогоны выполняет пользователь наKaggle.
+Smoke не записывается в experiments.csv; при импорте voting полные метрики
+сохранялись только для всех43206 эпох val, отдельно от covered-only оценки.
 Другие семейства моделей остаются каркасом. Проверенные команды и ограничения
 смотри в README. Полную серию выполняем на Kaggle; smoke не является экспериментом
 качества и не записывается в experiments.csv.
