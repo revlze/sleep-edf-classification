@@ -12,6 +12,12 @@ from src.series_results import journal
 from src.storage import atomic_path
 
 
+def missing_journal_error(entry: dict) -> bool:
+    # OSError repr drops its filename; the complete traceback retains it.
+    diagnostic = str(entry.get("error", "")) + "\n" + str(entry.get("traceback", ""))
+    return "experiments.csv" in diagnostic and "No such file or directory" in diagnostic
+
+
 def recover_results(output: Path, project: Path = ROOT) -> list[str]:
     initialize_journal(output / "experiments.csv", project / "experiments.csv")
     recovered = []
@@ -47,8 +53,8 @@ def recover_results(output: Path, project: Path = ROOT) -> list[str]:
                 shutil.copyfile(submission, temporary)
         error_path = folder / "last_error.json"
         if error_path.exists():
-            error = json.loads(error_path.read_text(encoding="utf-8")).get("error", "")
-            if "experiments.csv" in error and "No such file or directory" in error:
+            error = json.loads(error_path.read_text(encoding="utf-8"))
+            if missing_journal_error(error):
                 error_path.unlink()
         recovered.append(folder.name)
     for report_path in output.glob("*failures*.json"):
@@ -59,9 +65,7 @@ def recover_results(output: Path, project: Path = ROOT) -> list[str]:
             entry
             for entry in entries
             if not (
-                entry.get("experiment_id") in recovered
-                and "experiments.csv" in entry.get("error", "")
-                and "No such file or directory" in entry.get("error", "")
+                entry.get("experiment_id") in recovered and missing_journal_error(entry)
             )
         ]
         if len(remaining) != len(entries):
