@@ -1,0 +1,59 @@
+# Hypothesis: YASA events + short-window dynamics
+seed: 42
+data:
+  version: full_psg_v1
+  root: data/raw
+  sampling_rate: 100
+  epoch_seconds: 30
+  units: microvolts
+  channels:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+preprocessing:
+  recipe: saved immutable inputs; segment resets at record/epoch gaps; train-fold-only
+    learned scaling
+evaluation:
+  protocol: subject GroupKFold3 -> median-epoch full-train refit -> provided val ->
+    unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 113_pretrained
+  limitation: provided val reused; original author pretraining overlap remains separate
+    from downstream CV
+experiment_id: 132_tree
+summary: YASA events + short-window dynamics
+group: events
+model:
+  kind: event_tree
+  handcrafted: false
+  trials:
+  - num_leaves: 31
+    n_estimators: 300
+    learning_rate: 0.05
+    min_child_samples: 100
+    reg_lambda: 5.0
+  - num_leaves: 63
+    n_estimators: 500
+    learning_rate: 0.03
+    min_child_samples: 100
+    reg_lambda: 10.0
+  class_weight: sqrt, fit independently within each fold
+  feature_recipe: spindle and slow-wave7 stats x2EEG; 4band x4statistics x3channels;4EOG
+    dynamics =80 features; no stage masks
+  selection: exactly two predeclared trials; pooled OOF macro-F1, folds/class metrics/logloss
+    retained
+paths:
+  artefacts: artefacts/132_tree
+  submission: submissions/132_tree.csv
+training:
+  enabled: true
+  threads: auto
+  class_weight: sqrt, fit within each fold
+  search: two predeclared trials on same3 grouped folds
+  allow_training_required: true
+  selection: pooled train OOF macro-F1; full-train refit with selected fixed parameters

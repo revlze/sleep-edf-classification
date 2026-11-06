@@ -1,0 +1,55 @@
+# Hypothesis: Class-wise residual113 calibration with event80 features
+seed: 42
+data:
+  version: full_psg_v1
+  root: data/raw
+  sampling_rate: 100
+  epoch_seconds: 30
+  units: microvolts
+  channels:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+preprocessing:
+  recipe: saved immutable inputs; segment resets at record/epoch gaps; train-fold-only
+    learned scaling
+evaluation:
+  protocol: subject GroupKFold3 -> median-epoch full-train refit -> provided val ->
+    unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 113_pretrained
+  limitation: provided val reused; original author pretraining overlap remains separate
+    from downstream CV
+experiment_id: 135_pretrained
+summary: Class-wise residual113 calibration with event80 features
+group: fusion
+model:
+  kind: residual_calibration
+  events: true
+  architecture: confidence099/102/106 + P113 [+event80] -> 64 GELU dropout.2 -> zero
+    initialized5; delta=.5*tanh(head)
+  cv: honest disjoint subject roles A frozen existing nested082/085, B upstream102/106
+    heads fit, C correction fit, D outer held; 3 outer folds
+  limitation: smaller upstream and correction training sets than final113; not exact
+    recursive retraining of original whole ensemble
+  regularization: KL(new||base)*.1 + delta_squared*.01; final refit uses aligned original
+    OOF sources
+  no_new_backbone_training: true
+paths:
+  artefacts: artefacts/135_pretrained
+  submission: submissions/135_pretrained.csv
+training:
+  enabled: true
+  epochs: 10
+  patience: 3
+  batch_size: 4096
+  lr: 0.0003
+  weight_decay: 0.001
+  optimizer: AdamW
+  allow_training_required: true
+  selection: same3 subject folds; fold-only early stopping; median best epoch refit

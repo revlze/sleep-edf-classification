@@ -1,0 +1,43 @@
+# Hypothesis: Fixed .75*113 + .25*128
+seed: 42
+data:
+  version: full_psg_v1
+  root: data/raw
+  sampling_rate: 100
+  epoch_seconds: 30
+  units: microvolts
+  channels:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+preprocessing:
+  recipe: saved immutable inputs; segment resets at record/epoch gaps; train-fold-only
+    learned scaling
+evaluation:
+  protocol: frozen/native inference or saved probability fixed ensemble -> val ->
+    unlabelled test
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  baseline: 113_pretrained
+  limitation: provided val reused; original author pretraining overlap remains separate
+    from downstream CV
+experiment_id: 140_pretrained
+summary: Fixed .75*113 + .25*128
+group: blends
+model:
+  kind: fixed_ensemble
+  members:
+  - 113_pretrained
+  - 128_pretrained
+  weights:
+  - 0.75
+  - 0.25
+paths:
+  artefacts: artefacts/140_pretrained
+  submission: submissions/140_pretrained.csv
+training:
+  enabled: false
