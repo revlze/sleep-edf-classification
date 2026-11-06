@@ -224,9 +224,47 @@ ZIP результатов накопительный, с одним общим 
 сливает writable/read-only voting caches, исключает signals; может быть около1.8GB
 до сжатия полного val/test. Новые веса не создаются и не экспортируются.
 Resume:RESUME_ROOT для результатов; voting CNN_INPUTS обнаруживается вInput и
-читается без копирования, RESUME_CACHE_ROOT необязателен. Следующий ID —124.
+читается без копирования, RESUME_CACHE_ROOT необязателен. Следующий ID —147.
 Smoke не записывается в experiments.csv; при импорте voting полные метрики
 сохранялись только для всех43206 эпох val, отдельно от covered-only оценки.
+Подготовлена, но ещё НЕ выполнена полная серия124–146, CLI `python -m src.physiology_run`,
+launcher тот же05_pretrained.ipynb, та же веткаfeat/pretrained-refinement.
+124/125 — native YASA0.7 EEG+EOG без EMG/демографии, classifierSHA закреплён;
+126–128 — frozen Tiny contextual128 + AnySleep pre-classifier6, MLP CE/SupCon/hard negatives;
+129–131 — компактная обучаемая адаптация CalibSleep (не zero-shot/точная реплика):
+три channel-specific CNN, GPU STFT, cross-attention/gating, soft train-fold transition prior.
+132/133_tree — event80 / event80+106, ровно2 LightGBM trials на3 общих subject folds;
+134/135 — bounded class-wise residual113 без/с event80;136–145 — фиксированные75/25 смеси;
+146 — .5*113+.25*BestContrastive+.25*BestCalib по train OOF. F1/F2/F3 переиспользуют
+существующие IDs136–145 черезfamily_selection.json, новых дубликатов смесей нет.
+Полные метрики124–146 в experiments.csv не добавлены; локально только структурные проверки.
+Старые predictions/OOF/embeddings134/106 и6 nested Tiny experts упакованы без нового
+инференса в artefacts/cachepacks/sleep-edf-physiology-inputs.zip (~409MiB).
+Новый frozen embedding reader проверяет ID/данные/слой/assets/SHA и запрещает extraction fallback.
+Для fusion CV повторного разбиения глобального102/106 OOF недостаточно: подготовка строит
+четыре непересекающиеся subject роли A(experts)/B(upstream heads)/C(correction)/D(held)
+в каждом из3 outer folds. Переиспользуются6 сохранённых inner0 Tiny экспертов, новые
+backbones НЕ обучаются; обучаются6 небольших102/106 heads только наB. C/D не входят
+в A/B.082 использует готовые128 features после проверки всех frozen параметров и buffers;
+085 использует прежние held probabilities наB/C, новый inference только наD.
+Это честная role-split CV с меньшими upstream/calibration выборками, не точный recursive
+nested refit исходной113; ограничение явно сохраняется. Final correction fit — на исходных
+aligned train OOF; val/test — исходные full-train refit probabilities. Smoke только структурный.
+Event detection выполняется один раз на непрерывный сегмент без hypnogram: peak counts
+и точное перекрытие длительности с30s эпохами;5s powers/EOG dynamics, всего80 признаков.
+YASA-сегмент из1 эпохи: один повтор terminal sample для strict-window API, time_norm=0;
+ограничение и сообщения о старом pickle classifier сохраняются в metadata, ID не теряются.
+Группы: contrastive -> yasa -> features -> events -> blends -> signals -> calib ->
+fusion_prepare -> fusion -> blends -> final; all запускает эту цепочку smoke, затемfull.
+По умолчанию features, SMOKE_ONLY=True, ALLOW_TRAINING=False. NN группы имеют2GPU очереди,
+CPU threads делятся; feature workers также делят CPU. Batch SupCon640 / dual-stream512 /
+residual4096, AMP, GPU STFT, mmap signals, OOM автоматом уменьшает batch и повторяет эпоху.
+Один display на процесс,7s refresh, config/stage/fold/epoch/batch и реальное время.
+Экспорт3 накопительных ZIP: results (код/метрики/predictions/submissions), cache (events/
+roleOOF без signals/pools), trained (best/last/LightGBM). Resume требует всех3 соответствующих
+корней и той же версии кода. Изменён только isolated pretrained env: YASA0.7.0, pandas2.2.3
+(совместимость SciPy1.15); корневое окружение и завершённые recipes не менялись.
+
 Другие семейства моделей остаются каркасом. Проверенные команды и ограничения
 смотри в README. Полную серию выполняем на Kaggle; smoke не является экспериментом
 качества и не записывается в experiments.csv.
