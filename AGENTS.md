@@ -281,6 +281,32 @@ artefacts/imports/pretrained_physiology/20261106T173329Z. Из снимка вZI
 В fusion_prepare обнаружено многократное чтение z['probabilities'] внутри цикла по строкам;
 этот известный bottleneck пока не исправлялся при импорте. Полную завершённую серию не повторять.
 
+Подготовлена, но ещё не выполнена на полной выборке серия147–155 для проверки
+длины AnySleep context. CLI `python -m src.context_run`, тот же05_pretrained.ipynb.
+147=core256/halo128,148=core512/halo256,149=целый непрерывный сегмент;150–152 — B
+с соответствующим новым019;153–155 — только диагностическая подстановка в113
+с сохранёнными outputs102/106. Это НЕ корректно переобученная113; диагностические
+варианты исключены из выбора. A1 переиспользует019/099/113, нового ID не получает.
+Официальные run1/2/3, preprocessing, float32, encoder grid16 и границы сегментов
+сохранены. Только batch одинаковых длин уменьшается при OOM; при batch1 OOM
+вариант явно skipped_oom, зависимые смеси skipped_dependency, без скрытого
+перехода к меньшему контексту/precision или падения остальных вариантов.
+Один GPU-процесс, preprocessing один раз на сегмент для всех режимов и checkpoints;
+MAX_BATCH4, все доступные CPU threads. Full-record всегда batch1.
+Порядок одного launcher-run: smoke -> все full val -> зафиксировать выбор по val
+macro-F1 простого B (baseline099 тоже кандидат) -> test ВСЕХ успешных вариантов.
+TEST_POLICY=all по умолчанию; test labels не читаются. Результаты и9 submissions
+экспортируются одним накопительным ZIP без signals/embeddings/весов, с uv.lock.
+Перед test строки журнала validation_only; после успешного test complete. Smoke
+в журнал не попадает. Локально проверены только синтетические alignment/OOM и
+короткий двухэпоховый smoke с настоящими checkpoints, не полный эксперимент.
+Input — artefacts/cachepacks/sleep-edf-anysleep-context-inputs.zip (~50MiB):
+три официальных AnySleep веса/source и сохранённые val/test019/082/085/099/102/106/113.
+Старые feature/embedding/CNN кэши и FT weights для этой серии не нужны.
+Resume: исходный Input bundle, тот же CODE_REF и RESUME_ROOT с ZIP результатов;
+record probability caches включены в результат, сигналы пересчитываются только
+для незавершённых записей. Старые результаты/конфигурации не меняются. Следующий ID156.
+
 Исправлена инициализация experiments.csv в новом OUTPUT_ROOT: smoke не пишет журнал,
 а прежний full падал после сохранения metrics/probabilities/submission на отсутствии CSV.
 upsert_result теперь поддерживает новый журнал под общей блокировкой.05 перед запуском,

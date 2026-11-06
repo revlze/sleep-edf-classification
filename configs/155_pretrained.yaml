@@ -1,0 +1,47 @@
+# Diagnostic direct019 replacement with stale102/106 outputs; NOT a retrained113.
+seed: 42
+data:
+  version: full_psg_v1
+  root: data/raw
+  units: microvolts
+  sampling_rate: 100
+  epoch_seconds: 30
+  channel_order:
+  - EEG Fpz-Cz
+  - EEG Pz-Oz
+  - EOG horizontal
+training:
+  enabled: false
+evaluation:
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  protocol: frozen provided validation -> selection on validation B macro-F1 -> all
+    successful unlabelled test variants
+  limitation: reused validation; AnySleep author pretraining overlap; no independent
+    final estimate
+  baseline_id: 113
+experiment_id: 155_pretrained
+paths:
+  artefacts: artefacts/155_pretrained
+  submission: submissions/155_pretrained.csv
+summary: DIAGNOSTIC stale-head113 with 149_pretrained AnySleep context
+model:
+  kind: diagnostic_context113
+  members:
+  - 152_pretrained
+  - 102_pretrained
+  - 106_pretrained
+  weights:
+  - 0.5
+  - 0.25
+  - 0.25
+  source_context: 149_pretrained
+  warning: diagnostic only:102/106 outputs and their original019 inputs/embeddings
+    remain unchanged; this is NOT a consistently updated113 and is excluded from selection
+preprocessing:
+  recipe: align saved probabilities by epoch ID; float64 weighted mean, row normalize,
+    float32 output; no new inference
