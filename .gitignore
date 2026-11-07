@@ -35,3 +35,10 @@ tests/*
 .linear.lock
 experiments.csv.lock
 experiments.csv.tmp
+
+# Local final-package materials survive switching research branches; keep private.
+/archive/
+/final/
+/moodle_package/
+/team_info.csv
+/sleep-edf-moodle*.zip
