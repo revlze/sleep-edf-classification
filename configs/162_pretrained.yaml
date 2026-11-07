@@ -1,0 +1,46 @@
+# Fast fixed ablation from saved probabilities; no old model inference.
+seed: 42
+data:
+  version: full_psg_v1
+  root: data/raw
+evaluation:
+  protocol: provided validation only for comparisons; unlabelled test for fixed submissions
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  controls:
+  - 113_pretrained
+  - 156_pretrained
+  - 157_pretrained
+  limitation: reused validation and possible author-pretraining overlap; not an independent
+    estimate
+experiment_id: 162_pretrained
+summary: C Base4 + TCN correction
+training:
+  enabled: false
+model:
+  kind: four_expert_saved_corrections
+  experts:
+  - '156'
+  - 019
+  - 082
+  - 085
+  prior_weights:
+  - 0.3333333333333333
+  - 0.3333333333333333
+  - 0.16666666666666666
+  - 0.16666666666666666
+  correction_sources:
+  - 102 - 099
+  - 106 - 099
+  correction_weights:
+  - 0.0
+  - 0.25
+  projection: Euclidean projection onto nonnegative five-class simplex
+  old_correctors_not_retrained: true
+paths:
+  artefacts: artefacts/162_pretrained
+  submission: submissions/162_pretrained.csv

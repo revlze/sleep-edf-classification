@@ -298,7 +298,12 @@ def residual_experiment(config, shared, folder, trained, contract):
                 "probabilities": prob,
             }
             if gates is not None:
-                save_gate(folder / f"fold_{fold}_gate.npz", values, gates)
+                save_gate(
+                    folder / f"fold_{fold}_gate.npz",
+                    values,
+                    gates,
+                    config["model"].get("experts"),
+                )
             save_prediction(
                 target,
                 values,
@@ -352,14 +357,14 @@ def residual_experiment(config, shared, folder, trained, contract):
     return model, scale, fit_seconds
 
 
-def save_gate(path, values, gates):
+def save_gate(path, values, gates, experts=None):
     from src.pretrained import save_npz
 
     save_npz(path, ids=values["ids"], weights=gates)
     save_json(
         path.with_suffix(".json"),
         {
-            "experts": ["019", "082", "085"],
+            "experts": experts or ["019", "082", "085"],
             "mean": gates.mean(0).tolist(),
             "std": gates.std(0).tolist(),
             "quantiles": np.quantile(gates, [0.05, 0.5, 0.95], axis=0).tolist(),
@@ -387,7 +392,9 @@ def residual_predict(config, shared, split, model, scale, folder):
     )
     values = {**meta, "probabilities": prob}
     if gates is not None:
-        save_gate(folder / f"{split}_gate.npz", values, gates)
+        save_gate(
+            folder / f"{split}_gate.npz", values, gates, config["model"].get("experts")
+        )
     return values
 
 
