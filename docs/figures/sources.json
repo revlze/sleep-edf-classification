@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "description": "Рисунки из открытого train, labels.csv и сохранённых результатов; модели не запускались.",
+  "runtime": {
+    "python": "3.14.3",
+    "packages": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "matplotlib": "3.11.2"
+    },
+    "font": "DejaVu Sans"
+  },
+  "sources": {
+    "dataset:labels.csv": {
+      "sha256": "f0fea7665dda6764efea05aa91d5f5ef44754c085635957963d92a2741b9a048",
+      "bytes": 15335215
+    },
+    "dataset:epochs/train/SC4011.npz": {
+      "sha256": "d50d0d3c4a6aabb4d33510be122da974f18e714f06d5bb949a56e7bb2e2422e2",
+      "bytes": 51348660
+    },
+    "dataset:epochs/train/SC4092.npz": {
+      "sha256": "5f0fc06ddb392c3b52a9d332e6b4e6f44babfda01a8eccb6288ab173ab393b2c",
+      "bytes": 38330936
+    },
+    "repo:final/evidence/validation_metrics.json": {
+      "sha256": "d0ff83443c2e1be84b54bee0067f1a2f1e90516ea62d998f96943c21bd4bcf59",
+      "bytes": 990
+    },
+    "repo:experiments.csv": {
+      "sha256": "348f29a4b5e695ff6936b9fe4ad14cfada221581e98a1162b867d40284fd7e87",
+      "bytes": 56862
+    },
+    "repo:docs/figures/generate.py": {
+      "sha256": "ec4971a5f5e8087c863c688e951027898bfe3d682651fcf9973e06d51b37d59b",
+      "bytes": 33585
+    }
+  },
+  "signal": {
+    "fs_hz": 100,
+    "epoch_seconds": 30,
+    "samples_per_epoch": 3000,
+    "units": "µV",
+    "channels": [
+      "EEG Fpz-Cz",
+      "EEG Pz-Oz",
+      "EOG horizontal"
+    ],
+    "extra_filtering": false
+  },
+  "stage_order": [
+    "W",
+    "N1",
+    "N2",
+    "N3",
+    "REM"
+  ],
+  "palette": {
+    "W": "#D9A83F",
+    "N1": "#40AAA9",
+    "N2": "#5B8BD3",
+    "N3": "#8C6DBE",
+    "REM": "#D27199"
+  },
+  "examples": [
+    {
+      "stage": "W",
+      "id": "full_SC4011_01892",
+      "epoch_index": 1892
+    },
+    {
+      "stage": "N1",
+      "id": "full_SC4011_00750",
+      "epoch_index": 750
+    },
+    {
+      "stage": "N2",
+      "id": "full_SC4011_01252",
+      "epoch_index": 1252
+    },
+    {
+      "stage": "N3",
+      "id": "full_SC4011_00844",
+      "epoch_index": 844
+    },
+    {
+      "stage": "REM",
+      "id": "full_SC4011_01307",
+      "epoch_index": 1307
+    }
+  ],
+  "figures": {
+    "cover.png": {
+      "record": "SC4011",
+      "split": "train",
+      "signal_id": "full_SC4011_01279",
+      "signal_seconds": [
+        0,
+        30
+      ],
+      "display_channel_offsets_uv": [
+        320,
+        160,
+        0
+      ],
+      "diagram": "Схема задачи: 30 секунд трёх сигналов → одна из пяти стадий",
+      "highlighted_stage": "N2",
+      "label_source": "dataset:labels.csv",
+      "model_execution": false,
+      "png_sha256": "12d4d4b22373869682818dc15d4b03c32db6d365758cc77c06628765e38648c0"
+    },
+    "stage_examples.png": {
+      "examples": [
+        "full_SC4011_01892",
+        "full_SC4011_00750",
+        "full_SC4011_01252",
+        "full_SC4011_00844",
+        "full_SC4011_01307"
+      ],
+      "duration_seconds": 30,
+      "scale": "Единая для каждого канала между стадиями",
+      "png_sha256": "92752e04f4dbbe179104c0f722a8701498ced6c297ee311142c8213dafade515"
+    },
+    "validation_errors.png": {
+      "experiment_id": "157_pretrained",
+      "evaluation_set": "provided validation",
+      "epoch_count": 43206,
+      "subject_count": 8,
+      "matrix_rows": "Истинные стадии",
+      "matrix_columns": "Предсказанные стадии",
+      "matrix_color": "Нормализация по строке",
+      "f1": [
+        0.993661407724724,
+        0.8241308793456033,
+        0.9421165726564599,
+        0.8862518089725037,
+        0.972201575739557
+      ],
+      "png_sha256": "a79b678f121b7fa5c5461a908ef3ef027eb4c63f2d5d0b0b3e87c5e6b5e2c125"
+    },
+    "data_challenges.png": {
+      "class_counts": {
+        "train": {
+          "W": 208224,
+          "N1": 16277,
+          "N2": 51233,
+          "N3": 8412,
+          "REM": 18507
+        },
+        "val": {
+          "W": 28763,
+          "N1": 1884,
+          "N2": 7459,
+          "N3": 1784,
+          "REM": 3316
+        }
+      },
+      "subject_counts": {
+        "train": 58,
+        "val": 8
+      },
+      "gap_record": "SC4092",
+      "split": "train",
+      "gaps": [
+        {
+          "start_epoch": 1039,
+          "end_epoch_exclusive": 1040,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1058,
+          "end_epoch_exclusive": 1059,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1154,
+          "end_epoch_exclusive": 1155,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1332,
+          "end_epoch_exclusive": 1333,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1502,
+          "end_epoch_exclusive": 1503,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1599,
+          "end_epoch_exclusive": 1600,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1619,
+          "end_epoch_exclusive": 1620,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1682,
+          "end_epoch_exclusive": 1683,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1715,
+          "end_epoch_exclusive": 1716,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1731,
+          "end_epoch_exclusive": 1732,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1790,
+          "end_epoch_exclusive": 1791,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 1893,
+          "end_epoch_exclusive": 1894,
+          "missing_epochs": 1
+        },
+        {
+          "start_epoch": 2055,
+          "end_epoch_exclusive": 2857,
+          "missing_epochs": 802
+        }
+      ],
+      "missing_interval_contents": "Неизвестно",
+      "png_sha256": "07b84a0d7e9810a97489ea5bf16e0a567a7e5b71b4e973be2d584769b875cbc2"
+    },
+    "example_spectra.png": {
+      "examples": [
+        "full_SC4011_01892",
+        "full_SC4011_00750",
+        "full_SC4011_01252",
+        "full_SC4011_00844",
+        "full_SC4011_01307"
+      ],
+      "method": "Welch",
+      "window": "hann",
+      "nperseg": 400,
+      "noverlap": 200,
+      "detrend": "constant",
+      "scaling": "density",
+      "units": "µV²/Hz",
+      "display_frequency_hz": [
+        0.5,
+        40
+      ],
+      "aggregation_across_epochs": false,
+      "png_sha256": "fb3975b64076a6779d8831646d6b404e947cbb9a2c5974d5d58b5a3979558f77"
+    },
+    "experiment_milestones.png": {
+      "metric": "provided validation macro-F1",
+      "higher_is_better": true,
+      "axis_starts_at": 0,
+      "selected": "157_pretrained",
+      "experiments": [
+        {
+          "id": "001_linear",
+          "label": "Logistic Regression · 106 признаков",
+          "macro_f1": 0.7147942785894869,
+          "evaluation_set": "provided_val_after_train_group_cv"
+        },
+        {
+          "id": "005_linear",
+          "label": "Logistic Regression · контекст ±2",
+          "macro_f1": 0.7597760435751111,
+          "evaluation_set": "provided_val_after_train_group_cv"
+        },
+        {
+          "id": "011_tree",
+          "label": "LightGBM · контекст",
+          "macro_f1": 0.7639272201833763,
+          "evaluation_set": "provided_val_after_train_group_cv"
+        },
+        {
+          "id": "019_pretrained",
+          "label": "AnySleep · три состояния",
+          "macro_f1": 0.8385703467337091,
+          "evaluation_set": "zero_shot_provided_val"
+        },
+        {
+          "id": "053_pretrained",
+          "label": "AnySleep + TinySleepNet · 50/50",
+          "macro_f1": 0.8500752850343183,
+          "evaluation_set": "provided_val_then_unlabelled_test"
+        },
+        {
+          "id": "113_pretrained",
+          "label": "Базовая смесь + Gate + TCN",
+          "macro_f1": 0.853972239652399,
+          "evaluation_set": "provided_val_then_unlabelled_test"
+        },
+        {
+          "id": "156_pretrained",
+          "label": "U-Sleep",
+          "macro_f1": 0.9260240686871664,
+          "evaluation_set": "provided_val_then_unlabelled_test"
+        },
+        {
+          "id": "157_pretrained",
+          "label": "U-Sleep + ансамбль · 50/50",
+          "macro_f1": 0.9236724488877697,
+          "evaluation_set": "provided_val_then_unlabelled_test"
+        },
+        {
+          "id": "159_pretrained",
+          "label": "U-Sleep + ансамбль · 90/10",
+          "macro_f1": 0.9271248423796827,
+          "evaluation_set": "provided_val_then_unlabelled_test"
+        }
+      ],
+      "png_sha256": "9a755711e61075ad94573ea2f267809f1c2049c484d90c8be5f9592c3300a07c"
+    }
+  }
+}
