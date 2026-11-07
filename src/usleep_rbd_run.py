@@ -100,6 +100,17 @@ class Runner:
         for n, config in self.cfg.items():
             if config["experiment_id"] != name(n) or config["training"]["enabled"]:
                 raise ValueError("Frozen156–159 only")
+            if (
+                config["inference"]["recipe_id"] != "own019_blocks128_halo64_v2"
+                or config["inference"]["core_epochs"] != 128
+                or config["inference"]["halo_epochs"] != 64
+                or config["inference"]["encoder_grid_epochs"] != 16
+                or config["preprocessing"]["normalization"]
+                != "clip_plusminus_20IQR_then_RobustScaler"
+                or config["preprocessing"]["highpass"]
+                or config["model"]["checkpoint_sha256"] != CHECKPOINT_SHA
+            ):
+                raise ValueError("Expected our019 preprocessing and128/64 block recipe")
             folder = self.root / name(n)
             folder.mkdir(exist_ok=True)
             OmegaConf.save(OmegaConf.create(config), folder / "resolved.yaml")
@@ -125,7 +136,6 @@ class Runner:
     def standalone(self, split: str) -> dict:
         folder = self.root / name(156)
         records = []
-        contexts = {"window": [], "full": []}
         for i, path in enumerate(self.data.paths(split), 1):
             meta = self.data.record_metadata(path, split)
             cached = folder / "records" / split / path.name
@@ -167,32 +177,18 @@ class Runner:
                         "input_sha256": self.data.hashes[
                             path.relative_to(self.data.root).as_posix()
                         ],
-                        "full_segments": details,
+                        "blocks": details,
                         "prediction_sha256": sha256(cached),
                     },
                 )
                 del normalized, views
             self.seconds[156] += read(cached.with_suffix(".json"))["seconds"]
             records.append(row)
-            if split == "val":
-                with np.load(cached, allow_pickle=False) as z:
-                    contexts["window"].append(z["window_pair_probabilities"].mean(1))
-                    contexts["full"].append(z["full_pair_probabilities"].mean(1))
             self.progress.update(
                 1,
                 detail=f"156 · {split} · запись{i} сохранена · следующий этап: метрики/фиксированные смеси",
             )
         result = {k: np.concatenate([r[k] for r in records]) for k in records[0]}
-        if split == "val":
-            save_json(
-                folder / "context_validation_metrics.json",
-                {
-                    mode: evaluate_values(
-                        {**result, "probabilities": np.concatenate(parts)}
-                    )
-                    for mode, parts in contexts.items()
-                },
-            )
         return align_prediction(result, self.data.metadata(split))
 
     def save(self, n: int, split: str, values: dict, baseline: dict):
@@ -255,24 +251,18 @@ class Runner:
                 self.save(156, split, values, references[split])
                 if split == "val":
                     score = evaluate_values(values)["macro_f1"]
-                    allowed = (
-                        self.data.smoke
-                        or abs(score - 0.93657518) <= 0.02
-                        or self.args.allow_score_mismatch
-                    )
+                    allowed = True  # write_split already validated finite normalized probabilities and IDs.
                     check = {
                         "validation_macro_f1": score,
-                        "external_reported_macro_f1": 0.93657518,
-                        "tolerance": 0.02,
-                        "passed": allowed,
+                        "passed": True,
                         "smoke_is_not_quality_validation": self.data.smoke,
-                        "explicit_override": self.args.allow_score_mismatch,
                         "checkpoint_sha256": CHECKPOINT_SHA,
                         "architecture_sha256": ARCH_SHA,
                         "class_mapping": "identity W,N1,N2,N3,REM",
-                        "preprocessing": "F64 DC, gapwise resample/highpass; RECORD median/IQR; clip transformed20IQR",
-                        "averaging": "FP32 mean contexts, then mean EEG pairs; no post-renormalization",
-                        "on_mismatch": "Inspect checkpoint/preprocessing/class mapping/gaps/alignment and window/full diagnostics; blends withheld unless explicitly overridden",
+                        "preprocessing": "existing019 preprocess_segment(anysleep), separately per continuous segment: microvolts->volts, resample128/100, clip20IQR, RobustScaler",
+                        "inference": "existing epoch_blocks: core128, halo64, encoder grid16; keep core only",
+                        "averaging": "float32 mean of two EEG/EOG softmax pairs, one checkpoint",
+                        "external_score_target": None,
                     }
                     save_json(self.root / "standalone_validation_check.json", check)
                     print(
@@ -377,7 +367,7 @@ def pack_input(target: Path):
         "author_revision": REVISION,
         "author_url": "https://github.com/jesperstroem/U-Sleep-for-RBD-PD",
         "author_terms": "non-commercial research only",
-        "recipe_reference": "https://www.kaggle.com/code/baffledhedgehog/sleep-edf-u-sleep-v4?scriptVersionId=142584439",
+        "preprocessing_not_cached": True,
         "purpose": "official author model and checkpoint plus saved113 val/test only; no competitor implementation, signal caches or new training",
     }
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -400,7 +390,6 @@ def main():
     parser.add_argument("--threads", type=int, default=max(1, os.cpu_count() or 2))
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--smoke-epochs", type=int, default=4)
-    parser.add_argument("--allow-score-mismatch", action="store_true")
     parser.add_argument("--pack-input", type=Path)
     parser.add_argument("--export", type=Path)
     args = parser.parse_args()

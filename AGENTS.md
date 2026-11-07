@@ -6,9 +6,14 @@
 156_pretrained — официальный Pretrained_Model.ckpt из U-Sleep-for-RBD-PD;
 157–159 — фиксированные смеси156/113:50/50,75/25,90/10. Никакого обучения.
 CLI: python -m src.usleep_rbd_run;05_pretrained по умолчанию all, полный val/test.
-Код конкурента не переносится; он служит только reference рецепта инференса.
+По явному запросу пользователя156–159 заменены ДО новой оценки: используем нашу
+прежнюю схему019, не рецепт из чужого notebook. Старые результаты удалены по запросу.
+Preprocessing — preprocess_segment(anysleep) по каждому непрерывному сегменту;
+core128/halo64, encoder grid16, только центральные прогнозы, среднее EEG/EOG-пар.
+Без high-pass, Hann, full-context смеси и внешнего целевого macro-F1.
 В Input только официальный source/checkpoint и сохранённые113 val/test probabilities.
-Standalone проверяется перед смесями; full CUDA OOM повторяет тот же сегмент на CPU.
+Сначала standalone val, затем фиксированные смеси; CUDA OOM сохраняет явную ошибку.
+Input ZIP прежний: там нет обработанных сигналов или inference probabilities156.
 Исходные113 и финальный пакет не менять. Новые метрики появляются только после Kaggle-run.
 
 ## Цель и стиль работы

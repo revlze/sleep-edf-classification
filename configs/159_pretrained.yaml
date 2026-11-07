@@ -1,7 +1,7 @@
-# Frozen official U-Sleep check; three predeclared113 blends, no fitting.
+# Requested replacement of156–159: our existing019 signal and block pipeline.
 experiment_id: 159_pretrained
 seed: 2070
-summary: Fixed 90% U-Sleep156 + 10% saved113
+summary: Fixed 90% U-Sleep156 + 10% saved113; source156 uses our019 pipeline
 paths:
   artefacts: artefacts/159_pretrained
   submission: submissions/159_pretrained.csv
@@ -24,21 +24,25 @@ model:
   - 113_pretrained
   aggregation: float64 probability weighted mean, row normalize, float32
 preprocessing:
-  dc_removal: float64 per-record channel mean
-  resampling: resample_poly32/25, separately within contiguous segments
-  filter: Butterworth order2, highpass0.1Hz at128Hz, sosfiltfilt
-  normalization: per-record channel median/IQR after filtering; transformed20IQR clipping
+  implementation: src.pretrained_signals.preprocess_segment(family=anysleep)
+  scope: each continuous segment independently
+  units_conversion: microvolts_to_volts
+  sampling_rate: 128
+  normalization: clip_plusminus_20IQR_then_RobustScaler
+  highpass: false
   output: float32
 inference:
-  window_epochs: 64
-  stride_epochs: 32
-  window_weights: max(0.05, hann64)
-  tail: zero pad to64; keep real epochs only
-  full: true continuous segment, EEG pairs separately
-  reduction: float32 mean(window softmax, full softmax), then mean(Fpz/EOG, Pz/EOG);
-    no post-renormalization
+  recipe_id: own019_blocks128_halo64_v2
+  core_epochs: 128
+  halo_epochs: 64
+  encoder_grid_epochs: 16
+  implementation: src.pretrained_signals.epoch_blocks
+  channels: Fpz-Cz + horizontalEOG, Pz-Oz + horizontalEOG; separate forwards
+  output: keep core only; each epoch/pair exactly once
+  aggregation: float32 mean of two EEG/EOG softmax pairs
   precision: float32; no autocast/TF32
-  full_cuda_oom: same full segment on CPU, explicitly recorded; no temporal truncation
+  oom_policy: explicit failure preserving completed records; no temporal/precision
+    substitution
 evaluation:
   class_order:
   - W
@@ -47,7 +51,5 @@ evaluation:
   - N3
   - REM
   protocol: provided validation then unlabelled test; fixed mixtures; no training/search
-  external_reported_macro_f1: 0.93657518
-  blend_gate_max_abs_deviation: 0.02
-  limitations: Reused validation; external model pretraining may include Sleep-EDF.
-    External reported score is a reference, not our completed run.
+  limitations: Reused validation; external author pretraining may include Sleep-EDF.
+    No external validation-score target for our new preprocessing/context.

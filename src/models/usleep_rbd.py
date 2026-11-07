@@ -1,20 +1,16 @@
-"""Official RBD/PD U-Sleep checkpoint; independent adapter, no competitor code.
-
-Inference recipe reference: baffledhedgehog/sleep-edf-u-sleep-v4, version4.
+"""Official RBD/PD U-Sleep with our existing019 preprocessing and128/64 blocks.
 Author source/weights: jesperstroem/U-Sleep-for-RBD-PD, non-commercial research.
 The older017 used AnySleep's usleep-run1, a different source and checkpoint.
 """
 
-import gc
 import hashlib
 from pathlib import Path
 
 import numpy as np
 import torch
-from scipy.signal import butter, resample_poly, sosfiltfilt
 
 from src.models.pretrained_assets import official_module, verify_asset
-from src.pretrained_signals import contiguous_segments
+from src.pretrained_signals import contiguous_segments, epoch_blocks, preprocess_segment
 
 REVISION = "19e72b632b1bd87650f7d560f42aa32d47bd9a9b"
 CHECKPOINT_SHA = "5d7abe5e6799b697cda823657ef5d61a07ebbece3224bd5e863cae1983f6bd00"
@@ -59,37 +55,15 @@ def load_model(assets: Path, device: torch.device):
 
 
 def preprocess(raw: np.ndarray, indices: np.ndarray) -> tuple[np.ndarray, list[slice]]:
-    """Float64 DC removal, gapwise128Hz/highpass, RECORD median/IQR then clip.
-
-    Record-level normalization is intentional: it matches the referenced recipe;
-    filter/resampling and temporal inference never cross a missing-epoch boundary.
-    """
+    """Reuse019 preprocessing independently inside every continuous segment."""
     if raw.shape != (len(indices), 3000, 3):
         raise ValueError("Expected100Hz 30s epochs, two EEG and horizontal EOG")
     segments = contiguous_segments(indices)
-    result = np.empty((len(raw), 3, 3840), dtype=np.float32)
-    highpass = butter(2, 0.1, btype="highpass", fs=128, output="sos")
-    for channel in range(3):
-        signal = raw[:, :, channel].reshape(-1).astype(np.float64)
-        signal -= signal.mean(dtype=np.float64)
-        filtered = np.empty(len(raw) * 3840, dtype=np.float64)
-        for segment in segments:
-            a, b = segment.start, segment.stop
-            filtered[a * 3840 : b * 3840] = sosfiltfilt(
-                highpass, resample_poly(signal[a * 3000 : b * 3000], 32, 25)
-            )
-        q25, median, q75 = np.percentile(filtered, [25, 50, 75])
-        scale = q75 - q25
-        if scale < 10 * np.finfo(np.float64).eps:
-            scale = 1.0
-        filtered -= median
-        filtered /= scale
-        iqr = float(np.subtract(*np.percentile(filtered, [75, 25])))
-        np.clip(filtered, -20 * iqr, 20 * iqr, out=filtered)
-        result[:, channel] = filtered.reshape(len(raw), 3840)
-    if not np.isfinite(result).all():
-        raise ValueError("Non-finite normalized signals")
-    return result, segments
+    normalized = np.empty((len(raw), 3, 3840), dtype=np.float32)
+    for segment in segments:
+        signal = preprocess_segment(raw[segment], "anysleep")
+        normalized[segment] = signal.reshape(-1, 3840, 3).transpose(0, 2, 1)
+    return normalized, segments
 
 
 @torch.inference_mode()
@@ -103,80 +77,45 @@ def forward(model, batch: np.ndarray, device: torch.device, epochs: int) -> np.n
 
 
 def predict(model, normalized, segments, device, progress, prefix):
-    """64/32 Hann softmax mean, true full segments, then contexts and EEG pairs.
+    """Our128-core/64-halo protocol, no overlap weighting or full-record pass.
 
-    No AMP, changed batch sizes or labels. OOM retries the SAME full segment on CPU,
-    records that fallback explicitly, and returns the model to the original device.
+    Keep only the core output from each block. The16-epoch encoder grid is
+    preserved by the same epoch_blocks helper used for019. Both EEG/EOG pairs
+    use the identical blocks and one official checkpoint; mean softmax pairs.
     """
-    n = len(normalized)
-    weighted = np.zeros((n, 2, 5), np.float64)
-    counts = np.zeros(n, np.float64)
-    full = np.empty((n, 2, 5), np.float32)
-    hann = np.maximum(0.05, np.hanning(64)).astype(np.float32)
-    details = []
-    total = sum(2 * (len(range(s.start, s.stop, 32)) + 1) for s in segments)
-    done = 0
+    pairs = np.empty((len(normalized), 2, 5), np.float32)
+    coverage = np.zeros((len(normalized), 2), np.int64)
+    blocks = []
     for segment in segments:
-        for start in range(segment.start, segment.stop, 32):
-            end = min(start + 64, segment.stop)
-            for pair, eeg in enumerate((0, 1)):
-                progress.update(
-                    detail=f"{prefix} · окна64/32 · EEG{eeg + 1} · forward {done + 1}/{total}"
+        length = segment.stop - segment.start
+        for a, b, left, right in epoch_blocks(length, 128, 64, right_alignment=16):
+            blocks.append(
+                (
+                    segment.start + a,
+                    segment.start + b,
+                    segment.start + left,
+                    segment.start + right,
                 )
-                batch = np.zeros((1, 2, 64 * 3840), np.float32)
-                batch[0, :, : (end - start) * 3840] = (
-                    normalized[start:end][:, [eeg, 2]].transpose(1, 0, 2).reshape(2, -1)
-                )
-                p = forward(model, batch, device, 64)
-                weighted[start:end, pair] += (
-                    p[: end - start] * hann[: end - start, None]
-                )
-                done += 1
-            counts[start:end] += hann[: end - start]
+            )
+    details = []
+    for block_number, (a, b, left, right) in enumerate(blocks, 1):
         for pair, eeg in enumerate((0, 1)):
             progress.update(
-                detail=f"{prefix} · full segment{segment.start}:{segment.stop} · EEG{eeg + 1} · forward {done + 1}/{total}"
+                detail=f"{prefix} · блок128/halo64 {block_number}/{len(blocks)} · EEG{eeg + 1} · core{left}:{right}"
             )
             batch = np.ascontiguousarray(
-                normalized[segment][:, [eeg, 2]].transpose(1, 0, 2).reshape(1, 2, -1)
+                normalized[a:b][:, [eeg, 2]].transpose(1, 0, 2).reshape(1, 2, -1)
             )
-            fallback = False
-            try:
-                p = forward(model, batch, device, segment.stop - segment.start)
-            except torch.cuda.OutOfMemoryError:
-                fallback = True
-            if fallback:
-                gc.collect()
-                torch.cuda.empty_cache()
-                progress.update(
-                    detail=f"{prefix} · CUDA OOM: тот же полный сегмент на CPU; контекст не обрезается"
-                )
-                model.to("cpu")
-                p = forward(
-                    model, batch, torch.device("cpu"), segment.stop - segment.start
-                )
-                model.to(device)
-            full[segment, pair] = p
-            details.append(
-                {
-                    "start": segment.start,
-                    "stop": segment.stop,
-                    "eeg": eeg,
-                    "full_cpu_oom_fallback": fallback,
-                }
-            )
-            done += 1
-    if not (counts > 0).all():
-        raise ValueError("An epoch received no Hann window")
-    windows = (weighted / counts[:, None, None]).astype(np.float32)
-    # Preserve float32 reduction order of the reference recipe; no renormalization.
-    probabilities = (0.5 * (windows + full)).mean(axis=1)
+            probabilities = forward(model, batch, device, b - a)
+            pairs[left:right, pair] = probabilities[left - a : right - a]
+            coverage[left:right, pair] += 1
+        details.append(
+            {"input_start": a, "input_stop": b, "core_start": left, "core_stop": right}
+        )
+    if not np.all(coverage == 1):
+        raise ValueError("Each epoch/pair must receive exactly one core prediction")
     return (
-        probabilities,
-        {
-            "window_pair_probabilities": windows,
-            "full_pair_probabilities": full,
-            "hann_weight_sum": counts,
-        },
+        pairs.mean(axis=1),
+        {"pair_probabilities": pairs, "core_coverage": coverage},
         details,
     )
