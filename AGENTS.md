@@ -521,3 +521,14 @@ uv run ruff format --check .
 локальные результаты, кэши, заметки и содержимое `tests/`, кроме `.gitkeep`.
 Поддерживай `.gitignore`. Не коммить и не публикуй без запроса пользователя.
 В итоговом ответе сообщай изменения, реально выполненные проверки и ограничения.
+
+## Интеграция U-Sleep160–165
+
+160–164: Base4 и фиксированные поправки старых102/106 с проекцией на симплекс.
+165: новые Gate4/TCN4, только головы, прежние рецепты102/106 и prior1/3,1/3,1/6,1/6.
+CLI python -m src.integration_run; notebook05 сначала quick, отдельный ZIP, затем train.
+Новый Input sleep-edf-usleep-integration-inputs.zip содержит frozen embeddings,106 features,
+nested OOF,folds, saved probabilities и официальный U-Sleep checkpoint. Старые модели
+не обучать и не пересчитывать; единственный новый frozen inference —156 по train.
+Исходные113/156–159 сохранять. Новые результаты/веса/кэш — OUTPUT_ROOT/phase1 и phase2.
+Resume: два отдельных ZIP; численные контракты проверяются. Полный Kaggle-run ещё не выполнен.
