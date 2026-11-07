@@ -9,7 +9,6 @@ from omegaconf import OmegaConf
 from sleep_edf_final.heads import ResidualHead, WindowBank
 from sleep_edf_final.io import FINAL_ROOT, labels_csv, write_submission
 from sleep_edf_final.models import restore_tiny, tiny_model, verify_weights
-from sleep_edf_final.runner import assemble
 
 
 def test_selected_states_restore_strictly():
@@ -71,31 +70,7 @@ def test_context_stops_at_record_and_gap():
     assert not x[~mask].any()
 
 
-def test_ensemble_against_all_historical_test_labels():
-    archive = FINAL_ROOT.parent / "archive/artefacts"
-    if not (archive / "019_pretrained/test_predictions.npz").exists():
-        pytest.skip("Optional local historical evidence, not a final inference input")
-    arrays = {}
-    ids = None
-    for n in (19, 82, 85, 102, 106, 156):
-        with np.load(
-            archive / f"{n:03}_pretrained/test_predictions.npz", allow_pickle=False
-        ) as z:
-            if ids is None:
-                ids = z["ids"]
-            order = {v: i for i, v in enumerate(z["ids"])}
-            arrays[n] = z["probabilities"][[order[v] for v in ids]]
-    raw = np.stack([arrays[n] for n in (19, 82, 85)], 1).astype(np.float32)
-    normalized = raw.copy()
-    normalized /= normalized.sum(-1, keepdims=True)
-    p157, p113 = assemble(normalized, arrays[102], arrays[106], arrays[156])
-    for p, filename in [(p157, "submission.csv"), (p113, "submission_2.csv")]:
-        expected = labels_csv(FINAL_ROOT / "submissions" / filename)
-        assert len(ids) == 66222
-        assert dict(zip(ids, p.argmax(1).tolist(), strict=True)) == expected
-
-
-def test_notebook_has_one_default_export_and_no_outputs():
+def test_published_notebook_has_outputs_and_default_primary_only():
     nb = json.loads(
         (FINAL_ROOT / "notebooks/06_final.ipynb").read_text(encoding="utf-8")
     )
@@ -103,7 +78,8 @@ def test_notebook_has_one_default_export_and_no_outputs():
     for cell in nb["cells"]:
         if cell["cell_type"] != "code":
             continue
-        assert cell["outputs"] == [] and cell["execution_count"] is None
+        assert cell["execution_count"] is not None
+        assert not any(o.get("output_type") == "error" for o in cell["outputs"])
         for node in ast.parse("".join(cell["source"])).body:
             if (
                 isinstance(node, ast.Assign)

@@ -1,3 +1,5 @@
 * text=auto eol=lf
 *.pt binary
 *.pth binary
+*.ckpt binary
+*.pdf binary

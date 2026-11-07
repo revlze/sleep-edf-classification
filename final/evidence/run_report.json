@@ -1,0 +1,68 @@
+{
+  "status": "EXACT_MATCH",
+  "training": false,
+  "raw_test_inference": true,
+  "environment": {
+    "python": "3.12.12 (main, Feb 12 2026, 00:42:14) [Clang 21.1.4 ]",
+    "platform": "Linux-6.18.55+-x86_64-with-glibc2.39",
+    "device": "cuda:0",
+    "gpu": "Tesla T4",
+    "torch": "2.6.0+cu124",
+    "cuda": "12.4",
+    "threads": 4,
+    "deterministic_algorithms": true,
+    "cublas_workspace_config": ":4096:8",
+    "packages": {
+      "numpy": "2.2.6",
+      "scipy": "1.15.3",
+      "scikit-learn": "1.6.1",
+      "omegaconf": "2.3.0"
+    }
+  },
+  "feature_environment": {
+    "python": "3.14.2 (main, Jan 27 2026, 23:59:57) [Clang 21.1.4 ]",
+    "packages": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "antropy": "0.2.3",
+      "numba": "0.68.1",
+      "llvmlite": "0.50.0",
+      "scikit-learn": "1.9.1"
+    }
+  },
+  "feature_stage_seconds": 294.46077300499996,
+  "model_setup_seconds": 1.036460175000002,
+  "total_seconds": 805.9195902810001,
+  "epochs": 66222,
+  "output_second_submission": false,
+  "comparisons": {
+    "157": {
+      "compared_ids": 66222,
+      "label_mismatches": 0,
+      "examples": [],
+      "output_sha256": "31dd4ec1ad8e983408b1adecb582e468a1ff9bafbbcfe4f9d48bcbe717dafc1b",
+      "reference_sha256": "48962bc70c9cf75432941745eba49b48c22aadf5767c41f1e946a4f4bd34a41b",
+      "semantics": "comparison only; reference predictions never replace inference outputs"
+    }
+  },
+  "weights_manifest_sha256": "bb421a6abac6e82d7fda458ecf21166d7ffcf6cae99c75f8b33d3936a65fec59",
+  "identity": {
+    "implementation": "9ef7bae64bbba62d568425401e23cd4f450f46355f71d778884fb04c12c6956b",
+    "weights": "bb421a6abac6e82d7fda458ecf21166d7ffcf6cae99c75f8b33d3936a65fec59",
+    "data": "57982e6d757d648eedcce98ed9aa99ed6da5f494ac7269c470e7432cdb788dd6",
+    "device": "cuda:0",
+    "smoke_epochs": 0,
+    "deterministic": true
+  },
+  "test_labels_read": false,
+  "input_metadata": {
+    "owner": "levshaazz",
+    "slug": "sleep-edf-full-psg-course-data",
+    "version": 1,
+    "title": "Sleep-EDF Full PSG Course Data",
+    "metadata_source": "https://www.kaggle.com/api/v1/datasets/view/levshaazz/sleep-edf-full-psg-course-data"
+  },
+  "notebook_elapsed_seconds": 925.9,
+  "within_two_hours_including_setup": true,
+  "evidence_source": "Published Kaggle notebook scriptVersionId366571096, preserved output cells"
+}

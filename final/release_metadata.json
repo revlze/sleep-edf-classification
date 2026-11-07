@@ -1,8 +1,11 @@
 {
-  "status": "awaiting_full_kaggle_157_113_offline_execution",
+  "status": "verified_published_157_inference",
   "notebook": {
-    "url": null,
-    "version": null
+    "url": "https://www.kaggle.com/code/sevaperetiatko/sleep-edf-sbmteam?scriptVersionId=366571096",
+    "version": 1,
+    "script_version_id": 366571096,
+    "executed_file": "notebooks/06_final.ipynb",
+    "pdf": "pdf/06_final.pdf"
   },
   "inputs": [
     {
@@ -11,39 +14,29 @@
       "version": 1
     },
     {
-      "owner": null,
-      "slug": null,
-      "version": null,
-      "role": "frozen final code and weights bundle"
+      "owner": "sevaperetiatko",
+      "slug": "sleep-edf-final-offline-inputs",
+      "version": 2
     },
     {
-      "owner": null,
-      "slug": null,
-      "version": null,
-      "role": "fixed Linux offline Python runtimes and installed packages"
+      "owner": "sevaperetiatko",
+      "slug": "sleep-edf-final-runtime-linux",
+      "version": 1
     }
   ],
-  "solutions": {
-    "157": {
-      "primary": true,
-      "submission_id": null,
-      "reference_csv": "submissions/submission.csv",
-      "reference_sha256": "48962bc70c9cf75432941745eba49b48c22aadf5767c41f1e946a4f4bd34a41b"
-    },
-    "113": {
-      "primary": false,
-      "submission_id": null,
-      "reference_csv": "submissions/submission_2.csv",
-      "reference_sha256": "3f7b7a93128b68a4b5b0595097fbfa2a13d31f36072a3cc38e4c8000d26ebccb"
-    }
+  "selected_solution": "157_pretrained",
+  "optional_component_export": "113_pretrained",
+  "validation_macro_f1": 0.9236724488877697,
+  "public_leaderboard_score": 0.90055,
+  "execution": {
+    "epochs": 66222,
+    "label_mismatches": 0,
+    "notebook_elapsed_seconds": 925.9,
+    "status": "EXACT_MATCH",
+    "output_sha256": "31dd4ec1ad8e983408b1adecb582e468a1ff9bafbbcfe4f9d48bcbe717dafc1b",
+    "reference_sha256": "48962bc70c9cf75432941745eba49b48c22aadf5767c41f1e946a4f4bd34a41b"
   },
-  "one_notebook_for_two_solutions": "agreed with instructor by user",
-  "required_before_submission": [
-    "executed Kaggle notebook with outputs and exact saved version",
-    "PDF of executed notebook",
-    "full run EXACT_MATCH report for both157/113",
-    "Kaggle submission IDs",
-    "exact versions of final code/weights and offline runtime Inputs; teacher access"
-  ],
-  "internet": "off for entire final execution"
+  "production_source_commit": "f0c9db1873517bef41cd6c28d7ce30354f80a3ad",
+  "internet": "off",
+  "evidence": "evidence/run_report.json"
 }

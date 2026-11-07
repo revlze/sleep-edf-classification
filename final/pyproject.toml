@@ -35,3 +35,7 @@ extend-exclude = ["src/sleep_edf_final/vendor"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "UP"]
+
+[tool.ruff.format]
+# Preserve code cells exactly as downloaded from the executed Kaggle version.
+exclude = ["notebooks/06_final.ipynb"]

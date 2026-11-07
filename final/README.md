@@ -1,35 +1,36 @@
-# Финальное решение Sleep-EDF
+# Финальный inference
 
-Основное решение —157: равное среднее U-Sleep156 и ансамбля113.
-Дополнительное решение —113. Выбор выполнен по provided validation macro-F1;
-для дополнительного анализа использовалась выборка12 людей из train.
+`157 = 0.50 × U-Sleep156 + 0.50 × ансамбль113`.
+Все модели frozen. Код автономен: imports из `archive/` не используются.
 
-## Запуск на Kaggle
+- [Выполненный notebook](notebooks/06_final.ipynb) и [PDF](pdf/06_final.pdf).
+- [Точный Kaggle-run](https://www.kaggle.com/code/sevaperetiatko/sleep-edf-sbmteam?scriptVersionId=366571096).
+- [Запуск и версии Inputs](../docs/reproducibility.md).
+- [Архитектура](../docs/solution.md), [источники](../docs/sources.md).
 
-1. Импортируйте notebooks/06_final.ipynb.
-2. Подключите исходный Sleep-EDF Dataset version1, новый
-   sleep-edf-final-157-113-inputs.zip и прежний sleep-edf-final-runtime-linux.zip.
-3. Выберите T4×2 и Internet Off. GitHub и токен при запуске не требуются.
-4. OUTPUT_SECOND_SUBMISSION=False создаёт submission.csv для157.
-   True дополнительно создаёт submission_2.csv для113.
-5. Выполните Run All. Ноутбук восстановит фиксированное окружение, рассчитает
-   признаки и прогнозы из raw test, сохранит CSV и ZIP результатов.
-6. Для обоих решений ожидаются66222 ID и0 несовпадающих меток, status=EXACT_MATCH.
-   Полное время, включая подготовку окружения, должно быть не более7200 секунд.
+## Kaggle
 
-Официальные веса и собственные checkpoints находятся в weights/; точные SHA-256
-и источники — weights/manifest.json. Нового обучения и скачивания весов нет.
-Окружение Linux уже подготовлено: новые зависимости не требуются, runtime Input прежний.
-Код/веса упаковываются командой python final/package.py bundle из корня проекта.
+Подключите исходный Sleep-EDF Dataset v1, code/weights Input v2 и Linux runtime Input v1.
+Выберите T4 × 2, Internet Off и выполните Run All.
+`OUTPUT_SECOND_SUBMISSION=False` создаёт `submission.csv` для `157`.
+True дополнительно экспортирует `113` как `submission_2.csv`.
 
-## Состав
+## Файлы
 
-- configs/157_pretrained.yaml и113_pretrained.yaml — фиксированные настройки.
-- src/ — автономный inference, без imports из archive/.
-- submissions/ — выбранные CSV только для проверки после inference.
-- experiments.csv — validation-метрики двух выбранных решений.
-- release_metadata.json — точные версии notebook/Inputs и ID отправок; ожидают заполнения после Kaggle-run.
-- docs/ — устройство решения, история исследований, источники и ограничения.
+| Путь | Назначение |
+|---|---|
+| `src/` | Подготовка сигналов, backbones, heads, строгая проверка CSV |
+| `configs/` | Зафиксированные `157` и его компонент `113` |
+| `weights/manifest.json` | SHA-256 девяти нужных файлов весов |
+| `environments/features/` | Исходная среда 106-feature extractor, Python 3.14 |
+| `offline/` и `offline_runtime.py` | Сборка и локальное восстановление Linux runtime |
+| `evidence/` | Подтверждение опубликованного Kaggle-run |
+| `submissions/` | Исторические CSV только для сравнения после inference |
+| `tests/` | Короткие проверки контрактов и границ |
 
-Исходный notebook ещё нужно выполнить на Kaggle и сохранить его версию с outputs.
-Выполненный notebook и его PDF добавляются в отдельный приватный пакет Moodle.
+Зафиксированное воспроизведение: `EXACT_MATCH`, 66 222 ID, 0 различий меток,
+925.9 секунды для всех ячеек. Reference CSV не подменяет результат вычислений.
+При несовпадении код сохраняет диагностику и завершает запуск с ошибкой.
+
+Для нового Input: `python final/package.py bundle` из корня репозитория.
+Для точного воспроизведения опубликованной отправки используйте версии Inputs из инструкции.

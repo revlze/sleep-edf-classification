@@ -1,5 +1,5 @@
 # PDF выполненного notebook
 
-После полного Kaggle-run сюда добавляется PDF сохранённой версии06 с видимыми outputs
-и временем выполнения. Сейчас этот PDF намеренно не создан: пустой notebook или локальный
-smoke не подменяют выполненный Kaggle notebook. Та же выполненная версия нужна для Moodle.
+[06_final.pdf](06_final.pdf) сформирован из опубликованной выполненной версии
+Kaggle Notebook, scriptVersionId366571096. Исходные code cells, outputs и время
+сохранены в [06_final.ipynb](../notebooks/06_final.ipynb).
