@@ -1,0 +1,76 @@
+[project]
+name = "sleep-edf-neuroscience"
+version = "0.1.0"
+description = "Reproducible experiments for Sleep-EDF sleep stage classification"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "antropy>=0.2.3",
+    "catboost>=1.2.10",
+    "joblib>=1.6.0",
+    "lightgbm>=4.7.0",
+    "marimo>=0.25.2",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "omegaconf>=2.4.0",
+    "pandas>=3.1.0",
+    "polars>=2.1.0",
+    "portalocker[win32]>=4.3.0 ; sys_platform == 'win32'",
+    "scikit-learn>=1.9.1",
+    "scipy>=1.18.1",
+    "seaborn>=0.13.2",
+    "threadpoolctl>=3.7.0",
+    "tqdm>=4.70.1",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.30",
+    "nbclient>=0.11.0",
+    "nbformat>=5.11.1",
+    "pytest>=9.2.0",
+    "ruff>=0.14",
+]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+extend-exclude = ["data", "artefacts", "submissions", "docs", "desc"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP"]
+
+[tool.ruff.per-file-target-version]
+"src/pretrained*.py" = "py312"
+"src/models/anysleep.py" = "py312"
+"src/models/sleepfm.py" = "py312"
+"src/models/pretrained_assets.py" = "py312"
+"src/journal.py" = "py312"
+"notebooks/05_pretrained.ipynb" = "py312"
+"src/series_*.py" = "py312"
+"src/pretrained_series.py" = "py312"
+"src/postprocessing.py" = "py312"
+"src/models/anysleep_variants.py" = "py312"
+"src/models/tinysleepnet.py" = "py312"
+"src/models/temporal.py" = "py312"
+"src/training/pretrained.py" = "py312"
+"src/expansion_*.py" = "py312"
+"src/models/expansion_official.py" = "py312"
+"src/models/sleepgpt.py" = "py312"
+"src/training/expansion.py" = "py312"
+"src/refinement_*.py" = "py312"
+"src/training/refinement.py" = "py312"
+"src/models/wav2sleep.py" = "py312"
+"src/voting_*.py" = "py312"
+"src/models/tiny_voting.py" = "py312"
+"src/physiology_*.py" = "py312"
+"src/training/physiology.py" = "py312"
+
+"src/result_recovery.py" = "py312"
+"src/context_*.py" = "py312"
+
+"src/usleep_rbd_run.py" = "py312"
+"src/models/usleep_rbd.py" = "py312"
+
+"src/integration_*.py" = "py312"
+"src/refinement_models.py" = "py312"

@@ -1,0 +1,42 @@
+{
+  "status": "verified_published_157_inference",
+  "notebook": {
+    "url": "https://www.kaggle.com/code/sevaperetiatko/sleep-edf-sbmteam?scriptVersionId=366571096",
+    "version": 1,
+    "script_version_id": 366571096,
+    "executed_file": "notebooks/06_final.ipynb",
+    "pdf": "pdf/06_final.pdf"
+  },
+  "inputs": [
+    {
+      "owner": "levshaazz",
+      "slug": "sleep-edf-full-psg-course-data",
+      "version": 1
+    },
+    {
+      "owner": "sevaperetiatko",
+      "slug": "sleep-edf-final-offline-inputs",
+      "version": 2
+    },
+    {
+      "owner": "sevaperetiatko",
+      "slug": "sleep-edf-final-runtime-linux",
+      "version": 1
+    }
+  ],
+  "selected_solution": "157_pretrained",
+  "optional_component_export": "113_pretrained",
+  "validation_macro_f1": 0.9236724488877697,
+  "public_leaderboard_score": 0.90055,
+  "execution": {
+    "epochs": 66222,
+    "label_mismatches": 0,
+    "notebook_elapsed_seconds": 925.9,
+    "status": "EXACT_MATCH",
+    "output_sha256": "31dd4ec1ad8e983408b1adecb582e468a1ff9bafbbcfe4f9d48bcbe717dafc1b",
+    "reference_sha256": "48962bc70c9cf75432941745eba49b48c22aadf5767c41f1e946a4f4bd34a41b"
+  },
+  "production_source_commit": "f0c9db1873517bef41cd6c28d7ce30354f80a3ad",
+  "internet": "off",
+  "evidence": "evidence/run_report.json"
+}

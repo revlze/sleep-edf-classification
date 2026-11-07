@@ -1,4 +1,4 @@
-# Python and local environments
+# Python environments, build products and caches
 .venv/
 __pycache__/
 *.py[cod]
@@ -10,28 +10,38 @@ __pycache__/
 htmlcov/
 build/
 dist/
+*.log
+*.npz
+*.npy
+*.zip
+*.pt
+*.pth
+*.ckpt
 .env
 .env.*
 !.env.example
 
-# Input data and local results
-data/*
-!data/.gitkeep
-artefacts/*
-!artefacts/.gitkeep
-submissions/*
-!submissions/.gitkeep
-mlruns/
-mlartifacts/
-mlflow.db
-*.log
+# Downloaded signals, research artefacts and private working notes
+/archive/data/
+/archive/artefacts/
+/archive/submissions/
+/archive/docs/
+/archive/tests/
+/data/
+/artefacts/
+/submissions/
+/desc/
+/tests/
 
-# Private working notes, reference snapshots and local checks
-docs/*
-!docs/.gitkeep
-desc/
-tests/*
-!tests/.gitkeep
-.linear.lock
+# Generated runtime bundles and inference outputs
+/final/bundles/
+/final/outputs/
+*.lock.tmp
 experiments.csv.lock
 experiments.csv.tmp
+archive/experiments.csv.lock
+
+# Teacher-only packages and personal information
+/moodle_package/
+/team_info.csv
+/sleep-edf-moodle*.zip

@@ -1,0 +1,50 @@
+# Requested replacement of156–159: our existing019 signal and block pipeline.
+experiment_id: 156_pretrained
+seed: 2070
+summary: Official U-Sleep with our019 preprocessing, core128/halo64 and EEG-pair mean
+paths:
+  artefacts: artefacts/156_pretrained
+  submission: submissions/156_pretrained.csv
+data:
+  version: full_psg_v1
+  root: data/raw
+  sampling_rate: 100
+  epoch_seconds: 30
+  units: microvolts
+training:
+  enabled: false
+model:
+  kind: usleep_rbd_pretrained
+  source_revision: 19e72b632b1bd87650f7d560f42aa32d47bd9a9b
+  checkpoint: Pretrained_Model.ckpt
+  checkpoint_sha256: 5d7abe5e6799b697cda823657ef5d61a07ebbece3224bd5e863cae1983f6bd00
+preprocessing:
+  implementation: src.pretrained_signals.preprocess_segment(family=anysleep)
+  scope: each continuous segment independently
+  units_conversion: microvolts_to_volts
+  sampling_rate: 128
+  normalization: clip_plusminus_20IQR_then_RobustScaler
+  highpass: false
+  output: float32
+inference:
+  recipe_id: own019_blocks128_halo64_v2
+  core_epochs: 128
+  halo_epochs: 64
+  encoder_grid_epochs: 16
+  implementation: src.pretrained_signals.epoch_blocks
+  channels: Fpz-Cz + horizontalEOG, Pz-Oz + horizontalEOG; separate forwards
+  output: keep core only; each epoch/pair exactly once
+  aggregation: float32 mean of two EEG/EOG softmax pairs
+  precision: float32; no autocast/TF32
+  oom_policy: explicit failure preserving completed records; no temporal/precision
+    substitution
+evaluation:
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  protocol: provided validation then unlabelled test; fixed mixtures; no training/search
+  limitations: Reused validation; external author pretraining may include Sleep-EDF.
+    No external validation-score target for our new preprocessing/context.

@@ -1,0 +1,21 @@
+{
+  "spec": {
+    "epsilon": 1e-12,
+    "welch_nperseg": 500,
+    "welch_noverlap": 250,
+    "welch_window": "hamming",
+    "welch_average": "median",
+    "higuchi_kmax": 10,
+    "permutation_order": 3,
+    "batch_size": 32
+  },
+  "packages": {
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "antropy": "0.2.3",
+    "numba": "0.68.1",
+    "llvmlite": "0.50.0",
+    "scikit-learn": "1.9.1"
+  },
+  "original_definition_sha256": "dc0f1711282877aaa897d40476bf54340fc784a796fe9206777f2ead988743a5"
+}
