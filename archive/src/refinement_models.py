@@ -1,5 +1,7 @@
 """Small residual gates and temporal heads on fixed pretrained representations."""
 
+from itertools import combinations
+
 import numpy as np
 import torch
 from torch import nn
@@ -9,18 +11,18 @@ PRIOR = (0.5, 0.25, 0.25)
 
 
 def confidence_features(p: np.ndarray) -> np.ndarray:
-    """Three experts, fixed W/N1/N2/N3/REM order; no IDs or target labels."""
-    if p.ndim != 3 or p.shape[1:] != (3, 5):
-        raise ValueError("Expected N x 3 x 5 expert probabilities")
+    """Expert confidence/disagreement; preserves the original three-expert order."""
+    if p.ndim != 3 or p.shape[1] < 2 or p.shape[2] != 5:
+        raise ValueError("Expected N x experts x 5 probabilities")
     ordered = np.sort(p, axis=-1)
     entropy = -(p * np.log(np.maximum(p, 1e-7))).sum(-1)
     chunks = [
-        p.reshape(len(p), 15),
+        p.reshape(len(p), p.shape[1] * 5),
         ordered[:, :, -1],
         entropy,
         ordered[:, :, -1] - ordered[:, :, -2],
     ]
-    for a, b in ((0, 1), (0, 2), (1, 2)):
+    for a, b in combinations(range(p.shape[1]), 2):
         chunks.extend(
             [
                 np.abs(p[:, a] - p[:, b]).sum(1, keepdims=True),
@@ -129,10 +131,17 @@ class ResidualHead(nn.Module):
                 nn.GELU(),
             )
             last_features = hidden
-        self.head = nn.Linear(last_features, 3 if self.gate else 5)
+        prior = torch.tensor(config["model"].get("prior_weights", PRIOR))
+        if (
+            prior.ndim != 1
+            or not torch.all(prior > 0)
+            or not torch.isclose(prior.sum(), torch.tensor(1.0))
+        ):
+            raise ValueError("Expert prior must be positive and sum to one")
+        self.head = nn.Linear(last_features, len(prior) if self.gate else 5)
         nn.init.zeros_(self.head.weight)
         nn.init.zeros_(self.head.bias)
-        self.register_buffer("prior", torch.tensor(PRIOR))
+        self.register_buffer("prior", prior)
 
     def forward(self, x, p, mask, lengths):
         z = self.body(x, mask, lengths) if self.temporal else self.body(x)
