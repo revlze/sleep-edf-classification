@@ -68,3 +68,6 @@ select = ["E4", "E7", "E9", "F", "I", "UP"]
 
 "src/result_recovery.py" = "py312"
 "src/context_*.py" = "py312"
+
+"src/usleep_rbd_run.py" = "py312"
+"src/models/usleep_rbd.py" = "py312"

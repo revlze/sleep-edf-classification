@@ -1,0 +1,53 @@
+# Frozen official U-Sleep check; three predeclared113 blends, no fitting.
+experiment_id: 158_pretrained
+seed: 2070
+summary: Fixed 75% U-Sleep156 + 25% saved113
+paths:
+  artefacts: artefacts/158_pretrained
+  submission: submissions/158_pretrained.csv
+data:
+  version: full_psg_v1
+  root: data/raw
+  sampling_rate: 100
+  epoch_seconds: 30
+  units: microvolts
+training:
+  enabled: false
+model:
+  kind: fixed_probability_ensemble
+  source_revision: 19e72b632b1bd87650f7d560f42aa32d47bd9a9b
+  checkpoint: Pretrained_Model.ckpt
+  checkpoint_sha256: 5d7abe5e6799b697cda823657ef5d61a07ebbece3224bd5e863cae1983f6bd00
+  usleep_weight: 0.75
+  source_ids:
+  - 156_pretrained
+  - 113_pretrained
+  aggregation: float64 probability weighted mean, row normalize, float32
+preprocessing:
+  dc_removal: float64 per-record channel mean
+  resampling: resample_poly32/25, separately within contiguous segments
+  filter: Butterworth order2, highpass0.1Hz at128Hz, sosfiltfilt
+  normalization: per-record channel median/IQR after filtering; transformed20IQR clipping
+  output: float32
+inference:
+  window_epochs: 64
+  stride_epochs: 32
+  window_weights: max(0.05, hann64)
+  tail: zero pad to64; keep real epochs only
+  full: true continuous segment, EEG pairs separately
+  reduction: float32 mean(window softmax, full softmax), then mean(Fpz/EOG, Pz/EOG);
+    no post-renormalization
+  precision: float32; no autocast/TF32
+  full_cuda_oom: same full segment on CPU, explicitly recorded; no temporal truncation
+evaluation:
+  class_order:
+  - W
+  - N1
+  - N2
+  - N3
+  - REM
+  protocol: provided validation then unlabelled test; fixed mixtures; no training/search
+  external_reported_macro_f1: 0.93657518
+  blend_gate_max_abs_deviation: 0.02
+  limitations: Reused validation; external model pretraining may include Sleep-EDF.
+    External reported score is a reference, not our completed run.
