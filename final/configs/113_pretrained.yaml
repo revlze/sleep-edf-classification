@@ -33,7 +33,7 @@ checkpoints:
   tiny_classifier: 082_best.pt
   tiny_full: 085_best.pt
 reference:
-  csv: submission.csv
+  csv: submission_2.csv
   sha256: 3f7b7a93128b68a4b5b0595097fbfa2a13d31f36072a3cc38e4c8000d26ebccb
   provenance: selected original research submission; comparison only, never an inference
     input
@@ -52,9 +52,9 @@ heads:
       zero_initialized_head: true
       regularization: KL(gate || prior)
       experts:
-      - '019'
-      - '082'
-      - '085'
+      - 019
+      - 082
+      - 085
     batch_size: 4096
     checkpoint: 102_best.pt
   '106':

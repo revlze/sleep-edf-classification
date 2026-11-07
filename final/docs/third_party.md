@@ -26,3 +26,9 @@ uv.lock, включая PyTorch/CUDA/NVIDIA, NumPy/SciPy и LLVM/numba. Это �
 зависимостей с разными лицензиями, не единый новый MIT-пакет. Их LICENSE/notices
 сохраняются внутри Python и site-packages; версии и SHA архивов перечислены в
 offline_manifest.json. Код загрузчика не скачивает и не переустанавливает пакеты.
+
+
+U-Sleep-for-RBD-PD: https://github.com/jesperstroem/U-Sleep-for-RBD-PD,
+revision19e72b632b1bd87650f7d560f42aa32d47bd9a9b. Используются авторская архитектура
+и Pretrained_Model.ckpt. Условия авторов — non-commercial research only;
+сведения сохранены в vendor/USLEEP_RBD_NOTICE.md. Дополнительного обучения U-Sleep нет.

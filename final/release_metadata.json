@@ -1,5 +1,5 @@
 {
-  "status": "awaiting_full_kaggle_offline_execution",
+  "status": "awaiting_full_kaggle_157_113_offline_execution",
   "notebook": {
     "url": null,
     "version": null
@@ -24,24 +24,24 @@
     }
   ],
   "solutions": {
-    "113": {
+    "157": {
       "primary": true,
       "submission_id": null,
       "reference_csv": "submissions/submission.csv",
-      "reference_sha256": "3f7b7a93128b68a4b5b0595097fbfa2a13d31f36072a3cc38e4c8000d26ebccb"
+      "reference_sha256": "48962bc70c9cf75432941745eba49b48c22aadf5767c41f1e946a4f4bd34a41b"
     },
-    "099": {
+    "113": {
       "primary": false,
       "submission_id": null,
       "reference_csv": "submissions/submission_2.csv",
-      "reference_sha256": "d5959b95a33835ce1e685ca271014ccd276362d0df6ce25b214560c2267dc533"
+      "reference_sha256": "3f7b7a93128b68a4b5b0595097fbfa2a13d31f36072a3cc38e4c8000d26ebccb"
     }
   },
   "one_notebook_for_two_solutions": "agreed with instructor by user",
   "required_before_submission": [
     "executed Kaggle notebook with outputs and exact saved version",
     "PDF of executed notebook",
-    "full run EXACT_MATCH report for both113/099",
+    "full run EXACT_MATCH report for both157/113",
     "Kaggle submission IDs",
     "exact versions of final code/weights and offline runtime Inputs; teacher access"
   ],

@@ -14,7 +14,7 @@ from sleep_edf_final.runner import assemble
 
 def test_selected_states_restore_strictly():
     manifest = verify_weights()
-    assert len(manifest["weights"]) == 8
+    assert len(manifest["weights"]) == 9
     assert all(row["bytes"] < 50 * 2**20 for row in manifest["weights"])
     original = tiny_model()
     import copy
@@ -77,7 +77,7 @@ def test_ensemble_against_all_historical_test_labels():
         pytest.skip("Optional local historical evidence, not a final inference input")
     arrays = {}
     ids = None
-    for n in (19, 82, 85, 102, 106):
+    for n in (19, 82, 85, 102, 106, 156):
         with np.load(
             archive / f"{n:03}_pretrained/test_predictions.npz", allow_pickle=False
         ) as z:
@@ -88,8 +88,8 @@ def test_ensemble_against_all_historical_test_labels():
     raw = np.stack([arrays[n] for n in (19, 82, 85)], 1).astype(np.float32)
     normalized = raw.copy()
     normalized /= normalized.sum(-1, keepdims=True)
-    p113, p099 = assemble(raw, normalized, arrays[102], arrays[106])
-    for p, filename in [(p113, "submission.csv"), (p099, "submission_2.csv")]:
+    p157, p113 = assemble(normalized, arrays[102], arrays[106], arrays[156])
+    for p, filename in [(p157, "submission.csv"), (p113, "submission_2.csv")]:
         expected = labels_csv(FINAL_ROOT / "submissions" / filename)
         assert len(ids) == 66222
         assert dict(zip(ids, p.argmax(1).tolist(), strict=True)) == expected
@@ -128,7 +128,7 @@ def test_false_flag_excludes_old_secondary_outputs_from_zip(tmp_path):
     (source / "run_report.json").write_text(
         json.dumps({"output_second_submission": False})
     )
-    for name in ["submission.csv", "submission_2.csv", "099_probabilities.npz"]:
+    for name in ["submission.csv", "submission_2.csv", "113_probabilities.npz"]:
         (source / name).write_text("previous output")
     target = tmp_path / "results.zip"
     module.results(source, target)
@@ -136,5 +136,5 @@ def test_false_flag_excludes_old_secondary_outputs_from_zip(tmp_path):
         assert "submission.csv" in z.namelist()
         assert (
             "submission_2.csv" not in z.namelist()
-            and "099_probabilities.npz" not in z.namelist()
+            and "113_probabilities.npz" not in z.namelist()
         )

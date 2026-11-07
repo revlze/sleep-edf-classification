@@ -71,7 +71,7 @@ def main():
     report = json.loads((args.output_root / "run_report.json").read_text())
     if report["status"] != "STRUCTURAL_SMOKE" or report["epochs"] != 4:
         raise RuntimeError("Offline smoke did not complete")
-    if set(report["comparisons"]) != {"113", "99"}:
+    if set(report["comparisons"]) != {"157", "113"}:
         raise RuntimeError("Missing optional second export")
     proof = {
         "network_connect_errno": error,

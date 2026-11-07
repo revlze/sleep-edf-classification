@@ -1,0 +1,14 @@
+{
+  "status": "STRUCTURAL_SMOKE",
+  "solutions": [
+    "157",
+    "113"
+  ],
+  "epochs": 4,
+  "label_mismatches": {
+    "157": 0,
+    "113": 0
+  },
+  "device": "Windows CPU",
+  "scope": "Four-epoch raw-test smoke only; full Kaggle T4 exact reproduction/time limit pending. Selected mixture arithmetic separately matched historical labels for all66222 IDs."
+}

@@ -41,8 +41,8 @@ def bundle(target):
     except (OSError, subprocess.CalledProcessError):
         revision, dirty = None, None
     manifest = {
-        "kind": "sleep_edf_final_v2",
-        "solutions": ["113_pretrained", "099_pretrained"],
+        "kind": "sleep_edf_final_v3",
+        "solutions": ["157_pretrained", "113_pretrained"],
         "source_commit": revision,
         "source_dirty": dirty,
         "files": {"final/" + p.relative_to(FINAL).as_posix(): sha(p) for p in files},
@@ -65,7 +65,7 @@ def results(source, target):
     excluded = (
         set()
         if report["output_second_submission"]
-        else {"submission_2.csv", "099_probabilities.npz"}
+        else {"submission_2.csv", "113_probabilities.npz"}
     )
     with ZipFile(target, "x", ZIP_DEFLATED, compresslevel=4) as z:
         for p in source.iterdir():
@@ -85,7 +85,7 @@ def main():
     parser.add_argument("--results-root", type=Path)
     args = parser.parse_args()
     if args.action == "bundle":
-        bundle(args.output or FINAL / "bundles/sleep-edf-final-offline-inputs.zip")
+        bundle(args.output or FINAL / "bundles/sleep-edf-final-157-113-inputs.zip")
     else:
         if args.output is None or args.results_root is None:
             parser.error("results needs --output and --results-root")

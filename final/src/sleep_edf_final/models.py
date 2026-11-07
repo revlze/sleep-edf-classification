@@ -13,6 +13,7 @@ from torch import nn
 from .io import FINAL_ROOT, read_json, sha256
 from .preprocessing import contiguous_segments, epoch_blocks, preprocess_segment
 from .vendor.anysleep_no_hydra import AnySleep
+from .vendor.usleep_rbd import USleep
 
 
 def verify_weights():
@@ -75,6 +76,50 @@ def restore_tiny(model, number):
     else:
         model.load_state_dict(checkpoint["model"], strict=True)
     return model.eval()
+
+
+def usleep_model(device):
+    checkpoint = torch.load(
+        FINAL_ROOT / "weights/Pretrained_Model.ckpt",
+        map_location="cpu",
+        weights_only=True,
+    )
+    hp, state = checkpoint["hyper_parameters"], checkpoint["state_dict"]
+    parameters = {
+        k: hp[k] for k in ("initial_filters", "complexity_factor", "progression_factor")
+    }
+    if (
+        not hp["include_eog"]
+        or len(state) != 265
+        or parameters
+        != {"initial_filters": 5, "complexity_factor": 1.67, "progression_factor": 2}
+        or not all(k.startswith("model.") for k in state)
+    ):
+        raise ValueError("Unexpected official U-Sleep checkpoint")
+    model = USleep(num_channels=2, **parameters)
+    model.load_state_dict(
+        {k.removeprefix("model."): v for k, v in state.items()}, strict=True
+    )
+    return model.eval().to(device)
+
+
+@torch.inference_mode()
+def usleep_probabilities(model, signal, device, detail):
+    n = len(signal) // 3840
+    normalized = signal.reshape(n, 3840, 3).transpose(0, 2, 1)
+    pairs = np.empty((n, 2, 5), np.float32)
+    for a, b, left, right in epoch_blocks(n, 128, 64, right_alignment=16):
+        for pair, eeg in enumerate((0, 1)):
+            detail(f"U-Sleep EEG{eeg + 1}/2, эпохи {left}:{right}/{n}, core128/halo64")
+            batch = np.ascontiguousarray(
+                normalized[a:b][:, [eeg, 2]].transpose(1, 0, 2).reshape(1, 2, -1)
+            )
+            logits = model(torch.from_numpy(batch).to(device))
+            if logits.shape != (1, 5, b - a) or not torch.isfinite(logits).all():
+                raise ValueError("U-Sleep temporal/class alignment differs")
+            p = logits.softmax(1)[0].T.cpu().numpy()
+            pairs[left:right, pair] = p[left - a : right - a]
+    return pairs.mean(axis=1)
 
 
 def tiny_preprocess(x):
@@ -191,7 +236,14 @@ class FrozenBackbones:
         self.classifier = restore_tiny(copy.deepcopy(self.original), 82).to(device)
         self.full = restore_tiny(copy.deepcopy(self.original), 85).to(device)
         self.original = self.original.to(device)
-        for model in [*self.any, self.original, self.classifier, self.full]:
+        self.usleep = usleep_model(device)
+        for model in [
+            *self.any,
+            self.original,
+            self.classifier,
+            self.full,
+            self.usleep,
+        ]:
             model.requires_grad_(False)
 
     def record(self, raw, indices, detail):
@@ -200,6 +252,7 @@ class FrozenBackbones:
         p85 = []
         tiny = []
         anysix = []
+        p156 = []
         for si, part in enumerate(contiguous_segments(indices), 1):
 
             def status(message):
@@ -217,15 +270,18 @@ class FrozenBackbones:
                 )
             )
             tiny.append(tiny_embedding(self.original, eeg, self.device, status))
-            signal = torch.from_numpy(
-                np.ascontiguousarray(preprocess_segment(raw[part], "anysleep"))
-            ).to(self.device)
+            prepared = np.ascontiguousarray(preprocess_segment(raw[part], "anysleep"))
+            signal = torch.from_numpy(prepared).to(self.device)
             p19.append(any_probabilities(self.any, signal, status))
             anysix.append(any_embedding(self.any[0], signal, status))
+            p156.append(
+                usleep_probabilities(self.usleep, prepared, self.device, status)
+            )
         return {
             "p019": np.concatenate(p19),
             "p082": np.concatenate(p82),
             "p085": np.concatenate(p85),
+            "p156": np.concatenate(p156),
             "embeddings": np.concatenate(
                 [np.concatenate(tiny), np.concatenate(anysix)], axis=1
             ),

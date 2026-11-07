@@ -1,4 +1,4 @@
-"""Frozen113 inference from raw test; optional099 export. No training or test labels."""
+"""Frozen157 inference from raw test; optional113 export. No training or test labels."""
 
 import argparse
 import hashlib
@@ -9,6 +9,7 @@ import platform
 import subprocess
 import sys
 import time
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -33,6 +34,12 @@ from .progress import Progress
 
 
 def configure(device, threads):
+    warnings.filterwarnings(
+        "ignore",
+        message=r"Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy.*",
+        category=UserWarning,
+        module=r"torch\.nn\.modules\.conv",
+    )
     if device.startswith("cuda"):
         if not torch.cuda.is_available():
             raise RuntimeError("CUDA requested but unavailable")
@@ -74,7 +81,7 @@ def implementation():
         FINAL_ROOT / "uv.lock",
         FINAL_ROOT / "environments/features/uv.lock",
         FINAL_ROOT / "configs/113_pretrained.yaml",
-        FINAL_ROOT / "configs/099_pretrained.yaml",
+        FINAL_ROOT / "configs/157_pretrained.yaml",
     ]
     return hashlib.sha256(
         b"".join(p.read_bytes().replace(b"\r\n", b"\n") for p in files)
@@ -114,8 +121,8 @@ def head_prediction(config, number, inputs, experts, meta, device, progress):
     return np.concatenate(output)
 
 
-def assemble(raw_experts, experts, gate, temporal):
-    """Keep the two historical rounding contracts distinct."""
+def assemble(experts, gate, temporal, usleep):
+    """Preserve113 rounding, then the selected157 float64 mixture contract."""
     b_for113 = (experts * np.array([0.5, 0.25, 0.25])[None, :, None]).sum(1)
     p113 = (
         0.5 * b_for113
@@ -123,11 +130,9 @@ def assemble(raw_experts, experts, gate, temporal):
         + 0.25 * temporal.astype(np.float64)
     )
     p113 = (p113 / p113.sum(1, keepdims=True)).astype(np.float32)
-    p099 = (
-        raw_experts.astype(np.float64) * np.array([0.5, 0.25, 0.25])[None, :, None]
-    ).sum(1)
-    p099 = (p099 / p099.sum(1, keepdims=True)).astype(np.float32)
-    return p113, p099
+    p157 = 0.5 * usleep.astype(np.float64) + 0.5 * p113.astype(np.float64)
+    p157 = (p157 / p157.sum(1, keepdims=True)).astype(np.float32)
+    return p157, p113
 
 
 def run(args):
@@ -188,9 +193,7 @@ def run(args):
     with Progress(
         "Этап2/3: frozen backbones из raw test", len(paths), "запись"
     ) as progress:
-        progress.update(
-            detail="Загрузка3 AnySleep, оригинального Tiny и082/085 refit checkpoints"
-        )
+        progress.update(detail="Загрузка AnySleep, U-Sleep и TinySleepNet")
         models = FrozenBackbones(args.device)
         setup_seconds = time.perf_counter() - setup_started
         for number, path in enumerate(paths, 1):
@@ -294,7 +297,7 @@ def run(args):
             progress,
         )
         progress.update(1)
-        p113, p099 = assemble(raw_experts, experts, gate, temporal)
+        p157, p113 = assemble(experts, gate, temporal, arrays["p156"])
         save_npz(
             args.output_root / "component_probabilities.npz",
             **meta,
@@ -303,10 +306,11 @@ def run(args):
             p085=arrays["p085"],
             p102=gate,
             p106=temporal,
+            p156=arrays["p156"],
         )
-        outputs = [(113, "submission.csv", p113)]
+        outputs = [(157, "submission.csv", p157)]
         if args.output_second_submission:
-            outputs.append((99, "submission_2.csv", p099))
+            outputs.append((113, "submission_2.csv", p113))
         comparisons = {}
         for number, filename, p in outputs:
             write_submission(

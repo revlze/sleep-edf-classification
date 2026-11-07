@@ -69,4 +69,4 @@ def test_notebook_has_no_online_installation():
     )
     assert '"sync"' not in code and '"install"' not in code
     assert "runtime_module.prepare" in code and '"UV_OFFLINE": "1"' in code
-    assert "sleep_edf_final_v2" in code
+    assert "sleep_edf_final_v3" in code

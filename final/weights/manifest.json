@@ -63,6 +63,14 @@
       "source": "our full-train refit 106_pretrained",
       "contract": "b6132fc162f2b68c525b884484583d3436e25910b1fd0e5b6b19d7903de25897",
       "seed": 42
+    },
+    {
+      "file": "Pretrained_Model.ckpt",
+      "sha256": "5d7abe5e6799b697cda823657ef5d61a07ebbece3224bd5e863cae1983f6bd00",
+      "bytes": 37614927,
+      "source": "jesperstroem/U-Sleep-for-RBD-PD",
+      "revision": "19e72b632b1bd87650f7d560f42aa32d47bd9a9b",
+      "license": "Non-commercial research only; see vendor/USLEEP_RBD_NOTICE.md"
     }
   ],
   "vendor_files": {
@@ -71,7 +79,9 @@
     "PhysioEx-LICENSE.txt": "e589f92efe017ed9b69fec6b0f6ca8e9a04cfbc0c7d60f358f0a6561c6776d73",
     "tinysleepnet-config.json": "765544103d4cf2b0dd50681206296e866c0b47b62eeaf4c54e7e2cf5587b0a19",
     "tinysleepnet_source.py": "a19fa56baa6aa66f6d2ba35e57ec5e6368bf7076b84b712670b888ce5294a7f5",
-    "__init__.py": "6544b326b52848f499bde99f9229d84717c0bfa6db43cd3d6ee0f772f0c7cc51"
+    "__init__.py": "6544b326b52848f499bde99f9229d84717c0bfa6db43cd3d6ee0f772f0c7cc51",
+    "usleep_rbd.py": "9579133211737df86b5eb8f6c89e414fc612be52233fb88c8a09ed89cfb51336",
+    "USLEEP_RBD_NOTICE.md": "07f2aa55fbc1b741d4bccb029368e3726ef0d263312c0f7722b2f995db763c7c"
   },
   "vendor_hash_semantics": "SHA-256 after CRLF -> LF; weights use exact bytes"
 }

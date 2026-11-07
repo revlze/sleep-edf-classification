@@ -1,13 +1,13 @@
 # Sleep-EDF 2026
 
 Классификация стадий W, N1, N2, N3 и REM по двум EEG и одному EOG. Решение SBMTeam
-объединяет AnySleep, дообученные TinySleepNet и небольшие heads над их прогнозами.
-Исследования завершены; выбраны основной ансамбль **113** и резервный **099**.
+объединяет U-Sleep, AnySleep, дообученные TinySleepNet и небольшие heads над их прогнозами.
+Исследования завершены; выбраны основной ансамбль **157** и дополнительный **113**.
 
 | Решение | Provided validation macro-F1 | Public leaderboard¹ |
 |---|---:|---:|
+| 157: 50% U-Sleep + 50% ансамбль113 | 0.923672 | — |
 | 113: B + physiology gate + residual TCN | 0.853972 | 0.85207 |
-| 099: 50% AnySleep + 25% Tiny082 + 25% Tiny085 | 0.852765 | 0.84951 |
 
 ¹ По сохранённым отправкам/скриншоту команды. Это отдельная оценка, не validation и
 не private leaderboard. Многократно использованный val не является независимым holdout;
@@ -16,8 +16,8 @@
 ## Финальный запуск
 
 [final/notebooks/06_final.ipynb](final/notebooks/06_final.ipynb) — единый Kaggle notebook.
-По умолчанию создаёт `submission.csv` для113. `OUTPUT_SECOND_SUBMISSION=True`
-дополнительно создаёт `submission_2.csv` для099. Все прогнозы вычисляются из raw test;
+По умолчанию создаёт `submission.csv` для157. `OUTPUT_SECOND_SUBMISSION=True`
+дополнительно создаёт `submission_2.csv` для113. Все прогнозы вычисляются из raw test;
 обучения и чтения test labels нет. Весь финальный запуск выполняется с Internet Off.
 
 Подключаются исходный full_psg_v1 **version1**, новый Input с кодом/весами и отдельный
@@ -41,7 +41,7 @@ Input с готовыми Linux-окружениями. Зависимости �
 ```text
 final/             Frozen inference, notebook06, два конфига, веса, тесты и документация
 archive/           Исторические src, configs, notebooks и окружения исследований
-experiments.csv    Полная история149 записей; final/experiments.csv содержит выбранные2
+experiments.csv    Полная история158 записей; final/experiments.csv содержит выбранные2
 ```
 
 Все численные validation-метрики журнала сохранены; изменены только пути после переноса.
